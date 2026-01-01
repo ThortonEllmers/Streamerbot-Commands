@@ -396,7 +396,7 @@ Currency/Core/
 
 ## Credits
 
-**Created by**: HexEchoTV (CUB) | [GitHub](https://github.com/ThortonEllmers/Streamerbot-Commands)
+**Created by**: HexEchoTV (CUB) | [GitHub](https://github.com/HexEchoTV/Streamerbot-Commands)
 **License**: Free for personal use only
 
 
