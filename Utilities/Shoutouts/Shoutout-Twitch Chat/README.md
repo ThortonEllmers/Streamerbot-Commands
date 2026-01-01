@@ -144,7 +144,7 @@ Status: SUCCESS
 ## Author
 
 Created by **HexEchoTV (CUB)**
-https://github.com/ThortonEllmers/Streamerbot-Commands
+https://github.com/HexEchoTV/Streamerbot-Commands
 
 ## License
 
