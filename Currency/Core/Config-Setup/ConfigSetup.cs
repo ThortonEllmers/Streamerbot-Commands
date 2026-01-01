@@ -1,6 +1,6 @@
 ﻿// Copyright (c) 2025 HexEchoTV (CUB)
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
-// https://github.com/ThortonEllmers/Streamerbot-Commands
+// https://github.com/HexEchoTV/Streamerbot-Commands
 //
 // DEPENDENCIES: None (this is the foundation file)
 //
@@ -366,7 +366,7 @@ public class CPHInline
         string discordServerLink = "https://discord.gg/ngQXHUbnKg";
         CPH.SetGlobalVar("discordServerLink", discordServerLink, true);
 
-        CPH.LogInfo("=== Configuration setup complete by HexEchoTV (CUB) (https://github.com/ThortonEllmers/Streamerbot-Commands) ===");
+        CPH.LogInfo("=== Configuration setup complete by HexEchoTV (CUB) (https://github.com/HexEchoTV/Streamerbot-Commands) ===");
         CPH.LogInfo("All commands will now read from these global variables.");
         CPH.LogInfo("To change settings, edit values in Global Variables or run this script again.");
 
@@ -410,7 +410,7 @@ public class CPHInline
 
                 string json = "{\"embeds\":[{" +
                     "\"title\":\"Configuration Complete\"," +
-                    "\"description\":\"Discord logging is now active! All command logs will appear here.\\n\\n**Configured by:** HexEchoTV (CUB) (https://github.com/ThortonEllmers/Streamerbot-Commands)\"," +
+                    "\"description\":\"Discord logging is now active! All command logs will appear here.\\n\\n**Configured by:** HexEchoTV (CUB) (https://github.com/HexEchoTV/Streamerbot-Commands)\"," +
                     "\"color\":5763719," +
                     "\"timestamp\":\"" + DateTime.UtcNow.ToString("o") + "\"," +
                     "\"footer\":{\"text\":\"SUCCESS | HexEchoTV Logging System\"}" +
