@@ -244,7 +244,7 @@ Need help? Join our Discord for support:
 
 - **File**: `BalanceCommand.cs`
 - **Location**: `Currency/Core/Balance-Check/`
-- **Created by**: HexEchoTV (CUB) | [GitHub](https://github.com/ThortonEllmers/Streamerbot-Commands)
+- **Created by**: HexEchoTV (CUB) | [GitHub](https://github.com/HexEchoTV/Streamerbot-Commands)
 - **License**: Free for personal use only
 - **Dependencies**: ConfigSetup.cs
 
