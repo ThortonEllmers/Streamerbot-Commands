@@ -338,8 +338,10 @@ public class CPHInline
 
         // ===== TWITCH API CONFIGURATION =====
         // Get these from: https://twitchtokengenerator.com/
-        // Required scope: channel:manage:broadcast
-        // Used by: ClipCommandWithTitleAPI.cs, TitleCommand.cs, GameCommand.cs
+        // Required scopes:
+        //   - channel:manage:broadcast (for clips, stream title, game commands)
+        //   - moderator:read:followers (for followage command)
+        // Used by: ClipCommand.cs, TitleCommand.cs, GameCommand.cs, FollowageCommand.cs
 
         // â† PASTE YOUR CREDENTIALS HERE (from twitchtokengenerator.com)
         string twitchAccessToken = "YOUR_ACCESS_TOKEN_HERE";  // ACCESS TOKEN
