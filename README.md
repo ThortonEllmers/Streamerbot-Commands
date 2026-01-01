@@ -11,21 +11,19 @@
 
 ## 📋 Table of Contents
 
-- [Overview](#overview)
-- [Features](#features)
-- [Project Structure](#project-structure)
-- [Quick Start](#quick-start)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Currency System](#currency-system)
-- [Available Commands](#available-commands)
-- [Configuration](#configuration)
-- [Discord Integration](#discord-integration)
-- [Documentation](#documentation)
-- [Contributing](#contributing)
-- [Support](#support)
-- [License](#license)
-- [Credits](#credits)
+- [🎯 Overview](#-overview)
+- [✨ Features](#-features)
+- [📁 Project Structure](#-project-structure)
+- [🚀 Quick Start](#-quick-start)
+- [💰 Currency System](#-currency-system)
+- [🎮 Available Commands](#-available-commands)
+- [⚙️ Configuration](#️-configuration)
+- [🎨 Discord Integration](#-discord-integration)
+- [📚 Documentation](#-documentation)
+- [🤝 Contributing](#-contributing)
+- [💬 Support](#-support)
+- [📄 License](#-license)
+- [👏 Credits](#-credits)
 
 ---
 
