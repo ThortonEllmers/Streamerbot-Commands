@@ -24,14 +24,14 @@ public class CPHInline
             string currencyKey = CPH.GetGlobalVar<string>("config_currency_key", true);
 
             // Get the user who ran the command
-            string userName = args["userName"].ToString();
+            string user = args["user"].ToString();
             string userId = args["userId"].ToString();
 
             // ============================================
             // EXAMPLE 1: Check user's balance
             // ============================================
             int balance = CPH.GetTwitchUserVarById<int>(userId, currencyKey, true);
-            CPH.SendMessage($"{userName} has ${balance} {currencyName}");
+            CPH.SendMessage($"{user} has ${balance} {currencyName}");
 
             // ============================================
             // EXAMPLE 2: Give coins to user (for earning commands like !work, !mine, etc.)
@@ -40,10 +40,10 @@ public class CPHInline
             int currentBalance = CPH.GetTwitchUserVarById<int>(userId, currencyKey, true);
             int newBalance = currentBalance + coinsToGive;
             CPH.SetTwitchUserVarById(userId, currencyKey, newBalance, true);
-            CPH.SendMessage($"{userName} earned ${coinsToGive} {currencyName}! New balance: ${newBalance}");
+            CPH.SendMessage($"{user} earned ${coinsToGive} {currencyName}! New balance: ${newBalance}");
 
             // Log to Discord
-            LogSuccess("Coins Earned", $"{userName} earned ${coinsToGive}. New balance: ${newBalance}");
+            LogSuccess("Coins Earned", $"{user} earned ${coinsToGive}. New balance: ${newBalance}");
 
             // ============================================
             // EXAMPLE 3: Take coins from user (for shop/gambling commands)
@@ -53,17 +53,17 @@ public class CPHInline
 
             if (currentBalance < cost)
             {
-                CPH.SendMessage($"{userName}, you need ${cost} {currencyName} but only have ${currentBalance}!");
-                LogWarning("Insufficient Funds", $"{userName} tried to spend ${cost} but only has ${currentBalance}");
+                CPH.SendMessage($"{user}, you need ${cost} {currencyName} but only have ${currentBalance}!");
+                LogWarning("Insufficient Funds", $"{user} tried to spend ${cost} but only has ${currentBalance}");
                 return false; // Not enough coins
             }
 
             // Deduct coins
             newBalance = currentBalance - cost;
             CPH.SetTwitchUserVarById(userId, currencyKey, newBalance, true);
-            CPH.SendMessage($"{userName} spent ${cost} {currencyName}! Remaining: ${newBalance}");
+            CPH.SendMessage($"{user} spent ${cost} {currencyName}! Remaining: ${newBalance}");
 
-            LogSuccess("Coins Spent", $"{userName} spent ${cost}. Remaining: ${newBalance}");
+            LogSuccess("Coins Spent", $"{user} spent ${cost}. Remaining: ${newBalance}");
 
             // ============================================
             // EXAMPLE 4: Simple check if user has enough
@@ -73,12 +73,12 @@ public class CPHInline
 
             if (currentBalance >= requiredAmount)
             {
-                CPH.SendMessage($"{userName} has enough {currencyName}!");
+                CPH.SendMessage($"{user} has enough {currencyName}!");
             }
             else
             {
                 int needed = requiredAmount - currentBalance;
-                CPH.SendMessage($"{userName} needs ${needed} more {currencyName}!");
+                CPH.SendMessage($"{user} needs ${needed} more {currencyName}!");
             }
 
             // ============================================
@@ -89,8 +89,8 @@ public class CPHInline
 
             if (currentBalance < betAmount)
             {
-                CPH.SendMessage($"{userName}, you need ${betAmount} {currencyName} to gamble!");
-                LogWarning("Insufficient Bet Amount", $"{userName} needs ${betAmount} but has ${currentBalance}");
+                CPH.SendMessage($"{user}, you need ${betAmount} {currencyName} to gamble!");
+                LogWarning("Insufficient Bet Amount", $"{user} needs ${betAmount} but has ${currentBalance}");
                 return false;
             }
 
@@ -107,13 +107,13 @@ public class CPHInline
                 int winnings = betAmount * 2;
                 int finalBalance = currentBalance + winnings;
                 CPH.SetTwitchUserVarById(userId, currencyKey, finalBalance, true);
-                CPH.SendMessage($"{userName} won ${winnings} {currencyName}! New balance: ${finalBalance}");
-                LogSuccess("Gamble Won", $"{userName} bet ${betAmount} and won ${winnings}. Balance: ${finalBalance}");
+                CPH.SendMessage($"{user} won ${winnings} {currencyName}! New balance: ${finalBalance}");
+                LogSuccess("Gamble Won", $"{user} bet ${betAmount} and won ${winnings}. Balance: ${finalBalance}");
             }
             else
             {
-                CPH.SendMessage($"{userName} lost ${betAmount} {currencyName}! New balance: ${currentBalance}");
-                LogInfo("Gamble Lost", $"{userName} bet ${betAmount} and lost. Balance: ${currentBalance}");
+                CPH.SendMessage($"{user} lost ${betAmount} {currencyName}! New balance: ${currentBalance}");
+                LogInfo("Gamble Lost", $"{user} bet ${betAmount} and lost. Balance: ${currentBalance}");
             }
 
             // ============================================
@@ -136,14 +136,14 @@ public class CPHInline
                     int hoursLeft = (int)timeLeft.TotalHours;
                     int minutesLeft = timeLeft.Minutes;
 
-                    CPH.SendMessage($"{userName}, you must wait {hoursLeft}h {minutesLeft}m before using this command again!");
+                    CPH.SendMessage($"{user}, you must wait {hoursLeft}h {minutesLeft}m before using this command again!");
                     return false;
                 }
             }
 
             // Update last use time
             CPH.SetTwitchUserVarById(userId, cooldownKey, now.ToString("o"), true);
-            CPH.SendMessage($"{userName} used the command successfully!");
+            CPH.SendMessage($"{user} used the command successfully!");
 
             // ============================================
             // EXAMPLE 7: Counter tracking (like daily streaks, usage counts)
@@ -152,7 +152,7 @@ public class CPHInline
             int useCount = CPH.GetTwitchUserVarById<int>(userId, counterKey, true);
             useCount++;
             CPH.SetTwitchUserVarById(userId, counterKey, useCount, true);
-            CPH.SendMessage($"{userName} has used this command {useCount} times!");
+            CPH.SendMessage($"{user} has used this command {useCount} times!");
 
             return true;
         }
