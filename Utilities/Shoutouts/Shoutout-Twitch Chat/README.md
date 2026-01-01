@@ -27,7 +27,7 @@ A simple, lightweight shoutout command that works entirely in Twitch chat. No OB
 
 **Successful Shoutout:**
 ```
-Check out TargetUser at https://twitch.tv/TargetUser - They're awesome! Give them a follow!
+Take a looksee at TargetUser at https://twitch.tv/TargetUser - They're a good creature!
 ```
 
 **User Not Found:**
@@ -61,7 +61,7 @@ Usage: !so @username or !shoutout @username
 ### Change Chat Message
 Edit line 58 in the code:
 ```csharp
-CPH.SendMessage($"Check out {displayName} at https://twitch.tv/{displayName} - They're awesome! Give them a follow!");
+CPH.SendMessage($"Take a looksee at {displayName} at https://twitch.tv/{displayName} - They're a good creature!");
 ```
 
 **Examples:**
