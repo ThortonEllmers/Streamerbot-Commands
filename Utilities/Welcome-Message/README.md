@@ -298,5 +298,5 @@ if (todayCount == 50)
 ---
 
 **Author:** HexEchoTV (CUB)
-**GitHub:** https://github.com/ThortonEllmers/Streamerbot-Commands
+**GitHub:** https://github.com/HexEchoTV/Streamerbot-Commands
 **License:** MIT License
