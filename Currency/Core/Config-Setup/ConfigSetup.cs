@@ -338,25 +338,27 @@ public class CPHInline
 
         // ===== TWITCH API CONFIGURATION =====
         // Get these from: https://twitchtokengenerator.com/
+        //
         // Required scopes:
-        //   - channel:manage:broadcast (for clips, stream title, game commands)
+        //   - channel:manage:broadcast (for clip creation, stream title, game changes)
         //   - moderator:read:followers (for followage command)
+        //
         // Used by: ClipCommand.cs, TitleCommand.cs, GameCommand.cs, FollowageCommand.cs
 
         // â† PASTE YOUR CREDENTIALS HERE (from twitchtokengenerator.com)
-        string twitchAccessToken = "YOUR_ACCESS_TOKEN_HERE";  // ACCESS TOKEN
-        string twitchRefreshToken = "YOUR_REFRESH_TOKEN_HERE"; // REFRESH TOKEN (for future use)
-        string twitchClientId = "YOUR_CLIENT_ID_HERE";         // CLIENT ID
+        string twitchAccessToken = "YOUR_ACCESS_TOKEN_HERE";  // ACCESS TOKEN (required)
+        string twitchRefreshToken = "YOUR_REFRESH_TOKEN_HERE"; // REFRESH TOKEN (for token refresh)
+        string twitchClientId = "YOUR_CLIENT_ID_HERE";         // CLIENT ID (required)
 
         CPH.SetGlobalVar("twitchApiAccessToken", twitchAccessToken, true);
         CPH.SetGlobalVar("twitchApiRefreshToken", twitchRefreshToken, true);
         CPH.SetGlobalVar("twitchApiClientId", twitchClientId, true);
 
         // ===== DISCORD LOGGING CONFIGURATION =====
-        // Get webhook from: Discord Server â†’ Server Settings â†’ Integrations â†’ Webhooks
+        // Get webhook from: Discord Server’ Server Settings’ Integrations’ Webhooks
         // Used by: All commands for centralized logging to Discord
 
-        string discordWebhookUrl = "https://discord.com/api/webhooks/1455530557260693681/jLiYAIiM7Y3PINMcMfnMblA4CejkUy3lEnSqe-KKTM_K8LyCfG4TEhDdUIXOh6HKdOnp";
+        string discordWebhookUrl = "YOUR_DISCORD_WEBHOOK_URL_HERE";  // PASTE YOUR DISCORD WEBHOOK URL HERE
         CPH.SetGlobalVar("discordLogWebhook", discordWebhookUrl, true);
 
         // Enable/Disable Discord Logging (true = enabled, false = disabled)
@@ -375,20 +377,23 @@ public class CPHInline
         CPH.SendMessage("Currency configuration initialized! All settings loaded. | Created by HexEchoTV (CUB)");
 
         // Check if Twitch API was configured
-        if (twitchAccessToken != "YOUR_ACCESS_TOKEN_HERE")
+        if (twitchAccessToken != "YOUR_ACCESS_TOKEN_HERE" &&
+            twitchClientId != "YOUR_CLIENT_ID_HERE" &&
+            twitchRefreshToken != "YOUR_REFRESH_TOKEN_HERE")
         {
-            CPH.SendMessage("Twitch API credentials configured! (!clip, !title, !game commands ready)");
+            CPH.SendMessage("✅ Twitch API credentials configured! (!clip, !title, !game commands ready)");
             CPH.LogInfo("Twitch API credentials configured successfully");
         }
         else
         {
-            CPH.LogWarn("Twitch API credentials not configured. Edit lines 342-344 to enable !clip, !title, and !game commands.");
+            CPH.SendMessage("⚠️ Twitch API credentials NOT configured. Edit ConfigSetup.cs lines 349-351 OR set in StreamerBot Global Variables to enable !clip, !title, and !game commands.");
+            CPH.LogWarn("Twitch API credentials not configured. Edit lines 349-351 to enable !clip, !title, and !game commands.");
         }
 
         // Check if Discord webhook was configured
-        if (!string.IsNullOrEmpty(discordWebhookUrl))
+        if (!string.IsNullOrEmpty(discordWebhookUrl) && discordWebhookUrl != "YOUR_DISCORD_WEBHOOK_URL_HERE")
         {
-            CPH.SendMessage("Discord logging webhook configured! All logs will be sent to Discord.");
+            CPH.SendMessage("✅ Discord logging webhook configured! All logs will be sent to Discord.");
             CPH.LogInfo("Discord logging webhook configured successfully");
 
             // Send test message to Discord
@@ -396,7 +401,8 @@ public class CPHInline
         }
         else
         {
-            CPH.LogWarn("Discord webhook not configured.");
+            CPH.SendMessage("⚠️ Discord logging webhook NOT configured. Edit ConfigSetup.cs line 361 OR set in StreamerBot Global Variables for logging.");
+            CPH.LogWarn("Discord webhook not configured. Edit line 361 to set your webhook URL.");
         }
 
         return true;
