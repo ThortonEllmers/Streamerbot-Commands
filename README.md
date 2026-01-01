@@ -340,12 +340,15 @@ All commands will now log to Discord with color-coded embeds!
 For commands that need Twitch API access (like ClipCommand):
 
 1. Get credentials from [Twitch Token Generator](https://twitchtokengenerator.com)
-   - Select required scopes (e.g., `channel:manage:broadcast` for clips)
-   - Copy the **Access Token** and **Client ID**
-2. Add to ConfigSetup.cs (lines 344-346):
+   - Select required scopes:
+     - `channel:manage:broadcast` (for clips, stream title, game commands)
+     - `moderator:read:followers` (for followage command)
+   - Copy the **Access Token**, **Refresh Token**, and **Client ID**
+2. Add to ConfigSetup.cs (lines 345-347):
    ```csharp
-   CPH.SetGlobalVar("twitchApiClientId", "YOUR_CLIENT_ID", true);
-   CPH.SetGlobalVar("twitchApiAccessToken", "YOUR_ACCESS_TOKEN", true);
+   string twitchAccessToken = "YOUR_ACCESS_TOKEN_HERE";
+   string twitchRefreshToken = "YOUR_REFRESH_TOKEN_HERE";
+   string twitchClientId = "YOUR_CLIENT_ID_HERE";
    ```
 
 3. Run ConfigSetup.cs
