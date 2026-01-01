@@ -136,7 +136,7 @@ Need help? Join our Discord:
 
 - **File**: `BegCommand.cs`
 - **Location**: `Currency/Games/Beg/`
-- **Created by**: HexEchoTV (CUB) | [GitHub](https://github.com/ThortonEllmers/Streamerbot-Commands)
+- **Created by**: HexEchoTV (CUB) | [GitHub](https://github.com/HexEchoTV/Streamerbot-Commands)
 - **Dependencies**: ConfigSetup.cs
 
 
