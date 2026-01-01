@@ -19,21 +19,30 @@ public class CPHInline
             int minTransfer = CPH.GetGlobalVar<int>("config_give_min_amount", true);
 
             // Get the user who ran the command
-            string user = args["user"].ToString();
-            string userId = args["userId"].ToString();
+            if (!CPH.TryGetArg("user", out string user))
+            {
+                CPH.LogError("Give command: Missing 'user' argument");
+                return false;
+            }
+
+            if (!CPH.TryGetArg("userId", out string userId))
+            {
+                CPH.LogError("Give command: Missing 'userId' argument");
+                return false;
+            }
 
             // Get target user and amount from command
             string targetUser = "";
             int amount = 0;
 
             // Try to get target user
-            if (args.ContainsKey("targetUser") && !string.IsNullOrEmpty(args["targetUser"].ToString()))
+            if (CPH.TryGetArg("targetUser", out string tempTargetUser) && !string.IsNullOrEmpty(tempTargetUser))
             {
-                targetUser = args["targetUser"].ToString();
+                targetUser = tempTargetUser;
             }
-            else if (args.ContainsKey("input0") && !string.IsNullOrEmpty(args["input0"].ToString()))
+            else if (CPH.TryGetArg("input0", out string input0) && !string.IsNullOrEmpty(input0))
             {
-                targetUser = args["input0"].ToString();
+                targetUser = input0;
             }
             else
             {
@@ -42,9 +51,9 @@ public class CPHInline
             }
 
             // Try to get amount
-            if (args.ContainsKey("input1") && !string.IsNullOrEmpty(args["input1"].ToString()))
+            if (CPH.TryGetArg("input1", out string input1) && !string.IsNullOrEmpty(input1))
             {
-                if (!int.TryParse(args["input1"].ToString(), out amount))
+                if (!int.TryParse(input1, out amount))
                 {
                     CPH.SendMessage($"{user}, please enter a valid number.");
                     return false;
