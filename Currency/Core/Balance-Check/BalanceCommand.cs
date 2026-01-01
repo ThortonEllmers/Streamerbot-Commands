@@ -21,14 +21,56 @@ public class CPHInline
             string user = args["user"].ToString();
             string userId = args["userId"].ToString();
 
-            // Get user's balance from user variables
-            int balance = CPH.GetTwitchUserVarById<int>(userId, currencyKey, true);
+            // Check if checking another user's balance
+            string targetUser = "";
+            string targetUserId = userId;
+            string targetDisplayName = user;
+
+            // Try to get target user from arguments
+            if (args.ContainsKey("targetUser") && !string.IsNullOrEmpty(args["targetUser"].ToString()))
+            {
+                targetUser = args["targetUser"].ToString();
+            }
+            else if (args.ContainsKey("input0") && !string.IsNullOrEmpty(args["input0"].ToString()))
+            {
+                targetUser = args["input0"].ToString();
+            }
+
+            // If target user specified, look them up
+            if (!string.IsNullOrEmpty(targetUser))
+            {
+                // Remove @ symbol if present
+                targetUser = targetUser.Replace("@", "").Trim().ToLower();
+
+                // Get target user info
+                var targetUserInfo = CPH.TwitchGetExtendedUserInfoByLogin(targetUser);
+                if (targetUserInfo == null)
+                {
+                    CPH.SendMessage($"{user}, could not find user: {targetUser}");
+                    LogWarning("!balance - User Not Found", $"**User:** {user}\n**Searched for:** {targetUser}");
+                    return false;
+                }
+
+                targetUserId = targetUserInfo.UserId;
+                targetDisplayName = targetUserInfo.UserLogin;
+            }
+
+            // Get balance from user variables
+            int balance = CPH.GetTwitchUserVarById<int>(targetUserId, currencyKey, true);
 
             // Send balance message
-            CPH.SendMessage($"{user} has ${balance} {currencyName}.");
-
-            // Log command execution to Discord
-            LogCommand("!balance", user, $"Balance: {balance}");
+            if (targetUserId == userId)
+            {
+                // Checking own balance
+                CPH.SendMessage($"{user} has ${balance} {currencyName}.");
+                LogCommand("!balance", user, $"Balance: ${balance}");
+            }
+            else
+            {
+                // Checking another user's balance
+                CPH.SendMessage($"{targetDisplayName} has ${balance} {currencyName}.");
+                LogCommand("!balance", user, $"Checked {targetDisplayName}'s balance: ${balance}");
+            }
 
             return true;
         }
