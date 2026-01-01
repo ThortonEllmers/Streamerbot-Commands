@@ -18,8 +18,17 @@ public class CPHInline
             string currencyKey = CPH.GetGlobalVar<string>("config_currency_key", true);
 
             // Get the user who ran the command
-            string user = args["user"].ToString();
-            string userId = args["userId"].ToString();
+            if (!CPH.TryGetArg("user", out string user))
+            {
+                CPH.LogError("Balance command: Missing 'user' argument");
+                return false;
+            }
+
+            if (!CPH.TryGetArg("userId", out string userId))
+            {
+                CPH.LogError("Balance command: Missing 'userId' argument");
+                return false;
+            }
 
             // Check if checking another user's balance
             string targetUser = "";
@@ -27,13 +36,13 @@ public class CPHInline
             string targetDisplayName = user;
 
             // Try to get target user from arguments
-            if (args.ContainsKey("targetUser") && !string.IsNullOrEmpty(args["targetUser"].ToString()))
+            if (CPH.TryGetArg("targetUser", out string tempTargetUser) && !string.IsNullOrEmpty(tempTargetUser))
             {
-                targetUser = args["targetUser"].ToString();
+                targetUser = tempTargetUser;
             }
-            else if (args.ContainsKey("input0") && !string.IsNullOrEmpty(args["input0"].ToString()))
+            else if (CPH.TryGetArg("input0", out string input0) && !string.IsNullOrEmpty(input0))
             {
-                targetUser = args["input0"].ToString();
+                targetUser = input0;
             }
 
             // If target user specified, look them up
