@@ -321,7 +321,7 @@ Need help with clip commands?
 
 - **Folder**: `Clip/Clip-Fetch/`
 - **File**: `ClipCommand.cs`
-- **Created by**: HexEchoTV (CUB) | [GitHub](https://github.com/ThortonEllmers/Streamerbot-Commands)
+- **Created by**: HexEchoTV (CUB) | [GitHub](https://github.com/HexEchoTV/Streamerbot-Commands)
 - **License**: Free for personal use only
 
 
