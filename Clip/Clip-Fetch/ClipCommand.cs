@@ -41,7 +41,12 @@ public class CPHInline
             }
 
             // Get user who requested the clip
-            string clipRequester = args["user"].ToString();
+            if (!CPH.TryGetArg("user", out string clipRequester))
+            {
+                CPH.LogError("Clip command: Missing 'user' argument");
+                LogError("Clip - Missing User", "**Reason:** 'user' argument not provided");
+                return false;
+            }
 
             // Log command execution
             LogCommand("!clip (with title)", clipRequester);
@@ -56,18 +61,24 @@ public class CPHInline
 
             // Get broadcaster ID - try multiple possible keys
             string broadcasterId = null;
-            if (args.ContainsKey("broadcastUserId"))
-                broadcasterId = args["broadcastUserId"].ToString();
-            else if (args.ContainsKey("broadcasterUserId"))
-                broadcasterId = args["broadcasterUserId"].ToString();
-            else if (args.ContainsKey("targetUserId"))
-                broadcasterId = args["targetUserId"].ToString();
+            if (CPH.TryGetArg("broadcastUserId", out string tempBroadcasterId) && !string.IsNullOrEmpty(tempBroadcasterId))
+            {
+                broadcasterId = tempBroadcasterId;
+            }
+            else if (CPH.TryGetArg("broadcasterUserId", out tempBroadcasterId) && !string.IsNullOrEmpty(tempBroadcasterId))
+            {
+                broadcasterId = tempBroadcasterId;
+            }
+            else if (CPH.TryGetArg("targetUserId", out tempBroadcasterId) && !string.IsNullOrEmpty(tempBroadcasterId))
+            {
+                broadcasterId = tempBroadcasterId;
+            }
 
             if (string.IsNullOrEmpty(broadcasterId))
             {
                 CPH.SendMessage("⚠️ Could not get broadcaster ID. Check logs for details.");
-                CPH.LogError("Broadcaster ID not found in args. Available keys: " + string.Join(", ", args.Keys));
-                LogError("Clip - Broadcaster ID Missing", "**Available Keys:** " + string.Join(", ", args.Keys));
+                CPH.LogError("Broadcaster ID not found in args");
+                LogError("Clip - Broadcaster ID Missing", "**Reason:** None of the expected broadcaster ID arguments found");
                 return false;
             }
 
@@ -165,7 +176,12 @@ public class CPHInline
         }
         catch (Exception ex)
         {
-            string userName = args.ContainsKey("user") ? args["user"].ToString() : "Unknown";
+            string userName = "Unknown";
+            if (CPH.TryGetArg("user", out string user) && !string.IsNullOrEmpty(user))
+            {
+                userName = user;
+            }
+
             LogError("Clip Command Exception",
                 $"**User:** {userName}\n**Error:** {ex.Message}\n**Stack Trace:** {ex.StackTrace}");
             CPH.LogError($"Clip error: {ex.Message}");
