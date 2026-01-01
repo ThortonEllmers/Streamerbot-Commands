@@ -19,8 +19,17 @@ public class CPHInline
     {
         try
         {
-            string user = args["user"].ToString();
-            string userId = args["userId"].ToString();
+            if (!CPH.TryGetArg("user", out string user))
+            {
+                CPH.LogError("WelcomeFirstTimer: Missing 'user' argument");
+                return false;
+            }
+
+            if (!CPH.TryGetArg("userId", out string userId))
+            {
+                CPH.LogError("WelcomeFirstTimer: Missing 'userId' argument");
+                return false;
+            }
 
             // Get today's date (used for once-per-day checking)
             string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
@@ -39,9 +48,9 @@ public class CPHInline
             CPH.SetTwitchUserVarById(userId, "last_welcome_date", today, true);
 
             // Check user roles for personalized welcome
-            bool isSubscriber = args.ContainsKey("isSubscriber") && (bool)args["isSubscriber"];
-            bool isModerator = args.ContainsKey("isModerator") && (bool)args["isModerator"];
-            bool isVip = args.ContainsKey("isVip") && (bool)args["isVip"];
+            CPH.TryGetArg("isSubscriber", out bool isSubscriber);
+            CPH.TryGetArg("isModerator", out bool isModerator);
+            CPH.TryGetArg("isVip", out bool isVip);
 
             // Send role-based welcome message
             if (isModerator)
