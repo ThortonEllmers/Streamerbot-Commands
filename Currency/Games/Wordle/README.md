@@ -29,8 +29,10 @@ Both commands use the same gameplay mechanics but differ in output:
 **Create Your Google Sheet:**
 1. Go to [Google Sheets](https://sheets.google.com) and create a new spreadsheet
 2. Name it something like "Wordle Words"
-3. In Column A, paste the words from `wordle-words.txt` (one word per row)
-   - You can find 70 words in the `wordle-words.txt` file included with this command
+3. In Column A, paste the words from `wordle-words-sheet.txt` (one word per row)
+   - You can find 500+ words in the `wordle-words-sheet.txt` file included with this command
+   - Organized by categories: Common, Gaming, Streaming, Tech, Nature, Food & Drink
+   - Lines starting with # are comments and will be ignored
    - Or add your own 5-letter words!
 4. Optional: Add a header in A1 called "WORD" (the script will skip it)
 
@@ -43,8 +45,8 @@ Both commands use the same gameplay mechanics but differ in output:
 
 **Add the URL to ConfigSetup.cs:**
 1. Open `ConfigSetup.cs`
-2. Find line 367 (the Wordle config section)
-3. Replace `YOUR_SHEET_ID` with your full published CSV URL:
+2. Find line 369 (the Wordle config section)
+3. Replace the example URL with your full published CSV URL:
    ```csharp
    CPH.SetGlobalVar("config_wordle_sheet_url", "https://docs.google.com/spreadsheets/d/YOUR_ACTUAL_SHEET_ID/export?format=csv&gid=0", true);
    ```
@@ -69,13 +71,19 @@ Make sure you've run `ConfigSetup.cs` to initialize the Wordle configuration var
 
 ### 4. Browser Source Setup (HTML Version Only)
 
-1. Set the HTML file path in ConfigSetup.cs (default: `wordle.html` in StreamerBot directory)
+1. Set the HTML file path in ConfigSetup.cs (line 366):
+   ```csharp
+   CPH.SetGlobalVar("config_wordle_html_path", "G:/GitHub Projects/StreamerBot-Commands/Currency/Games/Wordle/wordle.html", true);
+   ```
+   **Important:** Use forward slashes (/) instead of backslashes (\) to avoid errors
 2. In OBS, add a new Browser Source:
-   - URL: `file:///PATH/TO/YOUR/wordle.html` (replace with your actual path)
+   - Check "Local file"
+   - Browse to your `wordle.html` file (or use URL: `file:///PATH/TO/YOUR/wordle.html`)
    - Width: 800
    - Height: 600
-   - Check "Refresh browser when scene becomes active"
+   - ✅ Check "Refresh browser when scene becomes active"
 3. Position and resize in your OBS scene as desired
+4. The browser source will auto-refresh every 2 seconds to show updates
 
 ## Configuration
 
@@ -87,7 +95,7 @@ CPH.SetGlobalVar("config_wordle_cost", 50, true);              // Cost to start 
 CPH.SetGlobalVar("config_wordle_win_reward", 150, true);       // Reward for winning
 CPH.SetGlobalVar("config_wordle_max_guesses", 6, true);        // Maximum guesses allowed
 CPH.SetGlobalVar("config_wordle_cooldown_seconds", 60, true);  // Cooldown between games
-CPH.SetGlobalVar("config_wordle_html_path", "wordle.html", true); // HTML file path
+CPH.SetGlobalVar("config_wordle_html_path", "G:/GitHub Projects/StreamerBot-Commands/Currency/Games/Wordle/wordle.html", true); // HTML file path (use forward slashes!)
 CPH.SetGlobalVar("config_wordle_sheet_url", "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv&gid=0", true); // Google Sheet URL
 ```
 
@@ -136,7 +144,7 @@ If you run out of guesses, the game ends and reveals the correct word.
 
 ```
 User: !wordle
-Bot: 🎮 User started Wordle! Cost: $50 Cub Coins. Guess a 5-letter word! Guesses left: 6
+Bot: 🎮 User started Wordle! Cost: $50 Cub Coins. Type !wordle [word] to guess! Guesses left: 6
 
 User: !wordle CRANE
 Bot: 🎯 🟩⬛🟨⬛⬛ | User has 5 guesses left!
@@ -148,11 +156,12 @@ Bot: 🎉 🟩🟩🟩🟩🟩 | User WON Wordle in 2/6 guesses! +$150 Cub Coins
 ## Browser Source Display (HTML Version)
 
 The HTML version creates a beautiful overlay showing:
-- **Title:** "HexEchoTV Wordle Challenge"
+- **Title:** "HexEchoTV" on first line, "Wordle Challenge" on second line
 - **Word Display:** Shows "? ? ? ? ?" during play, reveals word when game ends
-- **Guess Grid:** Visual grid showing all guesses with color-coded letters
+- **Guess Grid:** Visual grid showing all guesses with color-coded letters (green/yellow/gray)
 - **Game Status:** Remaining guesses, win/loss message
 - **Styling:** Dark theme with purple accents, glowing effects
+- **Auto-refresh:** Updates every 2 seconds automatically in OBS
 
 ## Word Pool
 
@@ -162,7 +171,7 @@ The commands fetch words from a Google Sheet that you configure. This allows you
 - Update words in real-time
 - Use different word lists for different streams
 
-The included `wordle-words.txt` file contains 70 carefully selected 5-letter words to get you started!
+The included `wordle-words-sheet.txt` file contains 500+ carefully selected 5-letter words organized into categories to get you started!
 
 **Word Requirements:**
 - Must be exactly 5 letters
@@ -208,14 +217,14 @@ Adjust `config_wordle_cooldown_seconds` to control how often users can play.
 
 ### Customize HTML Appearance
 Edit the `<style>` section in the `UpdateHtmlFile()` method in `WordleHtmlCommand.cs` to change:
-- Colors
-- Fonts
-- Sizes
-- Animations
-- Layout
+- Colors (border, title, letter boxes)
+- Fonts and text sizes
+- Layout and spacing
+- Add custom animations
+- Change refresh interval (default: 2 seconds)
 
 ### Add More Words
-Expand the `WORD_POOL` array in either command file with more 5-letter words.
+Simply add more words to your Google Sheet! The commands will automatically pick them up on the next game start. No code changes needed!
 
 ## Troubleshooting
 
@@ -242,15 +251,20 @@ Expand the `WORD_POOL` array in either command file with more 5-letter words.
 - Test the URL in a browser - it should download a CSV file
 
 **Browser source not updating (HTML version)**
-- Check that the file path in `config_wordle_html_path` is correct
-- Verify the file is being created (check StreamerBot logs)
-- Try refreshing the browser source in OBS
+- The HTML auto-refreshes every 2 seconds via JavaScript
+- Check that "Refresh browser when scene becomes active" is enabled in OBS browser source properties
+- Verify the file path in `config_wordle_html_path` is correct
+- Check StreamerBot logs to confirm the file is being written
+- Try manually refreshing the browser source in OBS (right-click → Refresh)
 - Make sure OBS has read permissions for the HTML file location
 
 **HTML file path issues**
-- Use absolute paths if having trouble: `C:/StreamerBot/wordle.html`
-- Avoid spaces in file paths or use quotes
+- **Important:** Use forward slashes (/) not backslashes (\) in the path
+  - ✅ Correct: `"G:/GitHub Projects/StreamerBot-Commands/Currency/Games/Wordle/wordle.html"`
+  - ❌ Wrong: `"G:\GitHub Projects\StreamerBot-Commands\Currency\Games\Wordle\wordle.html"`
+- Use absolute paths (full path from drive letter)
 - Check Windows file permissions
+- Run ConfigSetup.cs after changing the path
 
 ## Credits
 
