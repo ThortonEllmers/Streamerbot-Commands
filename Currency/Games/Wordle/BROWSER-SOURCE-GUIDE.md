@@ -9,7 +9,9 @@ When using the **WordleHtmlCommand.cs** version of Wordle, every time a player m
 The HTML display includes:
 
 ### 1. Title
-- **"HexEchoTV Wordle Challenge"** in large, glowing purple text at the top
+- **"HexEchoTV"** on the first line
+- **"Wordle Challenge"** on the second line
+- Large, glowing purple text at the top
 - Purple border with glow effect around the entire container
 - Dark semi-transparent background
 
@@ -89,18 +91,23 @@ The HTML display includes:
 
 ## How It Updates
 
+The HTML file auto-refreshes every 2 seconds using JavaScript, so OBS picks up changes automatically!
+
 1. **Game Start:**
    - Player types `!wordlehtml`
    - HTML file is created showing "? ? ? ? ?" and "Guesses Remaining: 6/6"
+   - OBS updates within 2 seconds
 
 2. **Each Guess:**
    - Player types `!wordlehtml CRANE`
    - HTML file updates instantly with the new guess row and colored feedback
+   - OBS refreshes automatically within 2 seconds
    - Remaining guesses counter decreases
 
 3. **Game End (Win):**
    - Player guesses correctly
    - HTML shows all guesses, reveals the word, displays "🎉 [User] WON! 🎉"
+   - Updates appear in OBS within 2 seconds
 
 4. **Game End (Loss):**
    - Player runs out of guesses
@@ -136,6 +143,14 @@ height: 60px;               /* Letter box height */
 font-family: 'Arial', sans-serif;  /* Change to your preferred font */
 ```
 
+### Change Auto-Refresh Interval
+Find the JavaScript section in the code and change the timeout:
+```javascript
+setTimeout(function() {
+    location.reload();
+}, 2000);  // Change 2000 to your desired milliseconds (2000 = 2 seconds)
+```
+
 ### Add Animations
 You can add CSS animations for guesses appearing, letters flipping, etc.
 
@@ -160,22 +175,31 @@ You can add CSS animations for guesses appearing, letters flipping, etc.
 ## Troubleshooting Display Issues
 
 **Browser source shows blank:**
-- Check the file path is correct
-- Make sure the HTML file exists
-- Try using absolute path: `file:///C:/Full/Path/To/wordle.html`
+- Check the file path is correct in ConfigSetup.cs
+- Make sure the HTML file exists at that location
+- Use forward slashes in path: `G:/Path/To/wordle.html` not `G:\Path\To\wordle.html`
+- Try using absolute path in OBS: `file:///C:/Full/Path/To/wordle.html`
 
 **Updates not showing:**
-- Enable "Refresh browser when scene becomes active"
+- The HTML auto-refreshes every 2 seconds via JavaScript
+- Enable "Refresh browser when scene becomes active" in OBS browser source properties
 - Right-click browser source → Refresh
 - Check StreamerBot logs to ensure file is being written
+- Verify the path in `config_wordle_html_path` is correct
 
 **Styling looks wrong:**
 - Ensure OBS browser source has enough width/height (800x600 recommended)
 - Check that CSS is rendering correctly in a regular browser first
+- Clear OBS browser cache: right-click source → Properties → check "Shutdown source when not visible"
 
 **Transparent background not working:**
 - OBS browser sources support transparency by default
 - Make sure you haven't set a background color in OBS source settings
+
+**Auto-refresh not working:**
+- The JavaScript auto-reload runs every 2 seconds
+- Check that JavaScript is enabled in OBS browser source
+- Verify the HTML file contains the `<script>` tag with `location.reload()`
 
 ## Advanced: Multiple Games
 
