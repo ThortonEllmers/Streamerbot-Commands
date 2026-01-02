@@ -358,6 +358,16 @@ public class CPHInline
         CPH.SetGlobalVar("config_streak_mult_per_day", 5, true);
         CPH.SetGlobalVar("config_streak_max_mult", 50, true);
 
+        // Wordle Command
+        CPH.SetGlobalVar("config_wordle_cost", 50, true);
+        CPH.SetGlobalVar("config_wordle_win_reward", 150, true);
+        CPH.SetGlobalVar("config_wordle_max_guesses", 6, true);
+        CPH.SetGlobalVar("config_wordle_cooldown_seconds", 60, true);
+        CPH.SetGlobalVar("config_wordle_html_path", "G:/GitHub Projects/StreamerBot-Commands/Currency/Games/Wordle/wordle.html", true);
+        // IMPORTANT: Use the CSV export URL, NOT the edit URL!
+        // Get it from: File → Share → Publish to web → CSV format
+        CPH.SetGlobalVar("config_wordle_sheet_url", "https://docs.google.com/spreadsheets/d/1IffNTWaunouIRcgxXYROyuwPDLvkyBs65Sag5DaNIVk/export?format=csv&gid=0", true);
+
         // ===== TWITCH API CONFIGURATION =====
         // Get these from: https://twitchtokengenerator.com/
         //
