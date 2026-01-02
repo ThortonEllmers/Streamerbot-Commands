@@ -99,17 +99,20 @@ public class CPHInline
         CPH.SetGlobalVar("config_wheel_red_chance", 40, true);
         CPH.SetGlobalVar("config_wheel_red_mult", 2, true);
         CPH.SetGlobalVar("config_wheel_blue_mult", 2, true);
+        CPH.SetGlobalVar("config_wheel_cooldown_seconds", 20, true);
 
         // Coinflip Command
         CPH.SetGlobalVar("config_coinflip_min_bet", 10, true);
         CPH.SetGlobalVar("config_coinflip_max_bet", 500, true);
         CPH.SetGlobalVar("config_coinflip_win_mult", 2, true);
+        CPH.SetGlobalVar("config_coinflip_cooldown_seconds", 15, true);
 
         // Slots Command
         CPH.SetGlobalVar("config_slots_min_bet", 20, true);
         CPH.SetGlobalVar("config_slots_max_bet", 400, true);
         CPH.SetGlobalVar("config_slots_triple_mult", 10, true);
         CPH.SetGlobalVar("config_slots_double_mult", 3, true);
+        CPH.SetGlobalVar("config_slots_cooldown_seconds", 20, true);
 
         // Blackjack Command
         CPH.SetGlobalVar("config_blackjack_min_bet", 25, true);
@@ -122,71 +125,85 @@ public class CPHInline
         CPH.SetGlobalVar("config_roulette_max_bet", 400, true);
         CPH.SetGlobalVar("config_roulette_number_mult", 35, true);
         CPH.SetGlobalVar("config_roulette_color_mult", 2, true);
+        CPH.SetGlobalVar("config_roulette_cooldown_seconds", 20, true);
 
         // Dice Command
         CPH.SetGlobalVar("config_dice_min_bet", 10, true);
         CPH.SetGlobalVar("config_dice_max_bet", 300, true);
         CPH.SetGlobalVar("config_dice_win_mult", 6, true);
+        CPH.SetGlobalVar("config_dice_cooldown_seconds", 15, true);
 
         // Flip Command
         CPH.SetGlobalVar("config_flip_min_bet", 10, true);
         CPH.SetGlobalVar("config_flip_max_bet", 500, true);
         CPH.SetGlobalVar("config_flip_win_mult", 2, true);
+        CPH.SetGlobalVar("config_flip_cooldown_seconds", 15, true);
 
         // Gamble Command
         CPH.SetGlobalVar("config_gamble_min_bet", 20, true);
         CPH.SetGlobalVar("config_gamble_max_bet", 600, true);
         CPH.SetGlobalVar("config_gamble_max_mult", 5, true);
+        CPH.SetGlobalVar("config_gamble_cooldown_seconds", 20, true);
 
         // Bingo Command
         CPH.SetGlobalVar("config_bingo_min_bet", 15, true);
         CPH.SetGlobalVar("config_bingo_max_bet", 300, true);
         CPH.SetGlobalVar("config_bingo_win_mult", 8, true);
+        CPH.SetGlobalVar("config_bingo_cooldown_seconds", 25, true);
 
         // Keno Command
         CPH.SetGlobalVar("config_keno_min_bet", 20, true);
         CPH.SetGlobalVar("config_keno_max_bet", 350, true);
         CPH.SetGlobalVar("config_keno_max_mult", 10, true);
+        CPH.SetGlobalVar("config_keno_cooldown_seconds", 20, true);
 
         // Lottery Command
         CPH.SetGlobalVar("config_lottery_min_bet", 10, true);
         CPH.SetGlobalVar("config_lottery_max_bet", 200, true);
         CPH.SetGlobalVar("config_lottery_jackpot_mult", 100, true);
+        CPH.SetGlobalVar("config_lottery_cooldown_seconds", 30, true);
 
         // Highlow Command
         CPH.SetGlobalVar("config_highlow_min_bet", 15, true);
         CPH.SetGlobalVar("config_highlow_max_bet", 400, true);
         CPH.SetGlobalVar("config_highlow_win_mult", 2, true);
+        CPH.SetGlobalVar("config_highlow_cooldown_seconds", 20, true);
 
         // Plinko Command
         CPH.SetGlobalVar("config_plinko_min_bet", 25, true);
         CPH.SetGlobalVar("config_plinko_max_bet", 500, true);
         CPH.SetGlobalVar("config_plinko_max_mult", 10, true);
+        CPH.SetGlobalVar("config_plinko_cooldown_seconds", 25, true);
 
         // Scratch Command
         CPH.SetGlobalVar("config_scratch_min_bet", 10, true);
         CPH.SetGlobalVar("config_scratch_max_bet", 250, true);
         CPH.SetGlobalVar("config_scratch_max_mult", 15, true);
+        CPH.SetGlobalVar("config_scratch_cooldown_seconds", 20, true);
 
         // Spin Command
         CPH.SetGlobalVar("config_spin_min_bet", 20, true);
         CPH.SetGlobalVar("config_spin_max_bet", 400, true);
         CPH.SetGlobalVar("config_spin_max_mult", 8, true);
+        CPH.SetGlobalVar("config_spin_cooldown_seconds", 20, true);
 
         // Crash Command
         CPH.SetGlobalVar("config_crash_min_bet", 25, true);
         CPH.SetGlobalVar("config_crash_max_bet", 500, true);
         CPH.SetGlobalVar("config_crash_max_mult", 10, true);
+        CPH.SetGlobalVar("config_crash_cooldown_seconds", 25, true);
 
         // Limbo Command
         CPH.SetGlobalVar("config_limbo_min_bet", 20, true);
         CPH.SetGlobalVar("config_limbo_max_bet", 400, true);
         CPH.SetGlobalVar("config_limbo_max_mult", 15, true);
+        CPH.SetGlobalVar("config_limbo_cooldown_seconds", 20, true);
 
         // Match Command
         CPH.SetGlobalVar("config_match_min_bet", 15, true);
         CPH.SetGlobalVar("config_match_max_bet", 350, true);
         CPH.SetGlobalVar("config_match_win_mult", 5, true);
+        CPH.SetGlobalVar("config_match_cooldown_seconds", 20, true);
 
         // ===== ADVENTURE/CHALLENGE GAMES =====
 
@@ -194,6 +211,7 @@ public class CPHInline
         CPH.SetGlobalVar("config_tower_min_bet", 30, true);
         CPH.SetGlobalVar("config_tower_max_bet", 400, true);
         CPH.SetGlobalVar("config_tower_mult_per_level", 0.5, true);
+        CPH.SetGlobalVar("config_tower_cooldown_seconds", 30, true);
 
         // Heist Command
         CPH.SetGlobalVar("config_heist_min_bet", 50, true);
@@ -237,6 +255,7 @@ public class CPHInline
         CPH.SetGlobalVar("config_ladder_min_bet", 25, true);
         CPH.SetGlobalVar("config_ladder_max_bet", 400, true);
         CPH.SetGlobalVar("config_ladder_mult_per_rung", 0.4, true);
+        CPH.SetGlobalVar("config_ladder_cooldown_seconds", 30, true);
 
         // Battle Command
         CPH.SetGlobalVar("config_battle_min_bet", 30, true);
@@ -248,6 +267,7 @@ public class CPHInline
         CPH.SetGlobalVar("config_mines_min_bet", 20, true);
         CPH.SetGlobalVar("config_mines_max_bet", 400, true);
         CPH.SetGlobalVar("config_mines_max_mult", 12, true);
+        CPH.SetGlobalVar("config_mines_cooldown_seconds", 25, true);
 
         // Race Command
         CPH.SetGlobalVar("config_race_min_bet", 25, true);
@@ -260,6 +280,7 @@ public class CPHInline
         // Duel Command
         CPH.SetGlobalVar("config_duel_min_bet", 50, true);
         CPH.SetGlobalVar("config_duel_max_bet", 500, true);
+        CPH.SetGlobalVar("config_duel_cooldown_seconds", 30, true);
 
         // Rob Command
         CPH.SetGlobalVar("config_rob_cooldown_minutes", 45, true);
