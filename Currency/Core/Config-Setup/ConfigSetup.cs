@@ -368,6 +368,12 @@ public class CPHInline
         // Get it from: File → Share → Publish to web → CSV format
         CPH.SetGlobalVar("config_wordle_sheet_url", "https://docs.google.com/spreadsheets/d/1IffNTWaunouIRcgxXYROyuwPDLvkyBs65Sag5DaNIVk/export?format=csv&gid=0", true);
 
+        // Wordle OBS Source Control (HTML version only)
+        // Set these to the exact names in your OBS
+        CPH.SetGlobalVar("config_wordle_obs_scene", "Gaming", true);        // The OBS scene containing the wordle source
+        CPH.SetGlobalVar("config_wordle_obs_source", "Wordle Display", true); // The browser source name in OBS
+        CPH.SetGlobalVar("config_wordle_auto_show_hide", true, true);       // Enable/disable auto show/hide
+
         // ===== TWITCH API CONFIGURATION =====
         // Get these from: https://twitchtokengenerator.com/
         //
