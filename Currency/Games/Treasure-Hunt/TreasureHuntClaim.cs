@@ -44,6 +44,28 @@ public class CPHInline
                 return false;
             }
 
+            // Check for timeout
+            int timeoutSeconds = CPH.GetGlobalVar<int>("config_game_inactivity_timeout", true);
+            if (timeoutSeconds == 0) timeoutSeconds = 60;
+
+            string spawnTimeStr = CPH.GetGlobalVar<string>("treasure_loot_spawn_time", true);
+            if (!string.IsNullOrEmpty(spawnTimeStr))
+            {
+                DateTime spawnTime = DateTime.Parse(spawnTimeStr);
+                TimeSpan elapsed = DateTime.UtcNow - spawnTime;
+
+                if (elapsed.TotalSeconds > timeoutSeconds)
+                {
+                    // Treasure timed out
+                    CPH.SendMessage($"⏱️ The treasure despawned after {timeoutSeconds} seconds! No one claimed it in time.");
+                    LogWarning("Treasure Hunt Timeout", $"**Idle Time:** {elapsed.TotalSeconds:F1} seconds");
+
+                    // Clear treasure state
+                    CPH.SetGlobalVar("treasure_loot_active", false, true);
+                    return false;
+                }
+            }
+
             // Get loot details
             int reward = CPH.GetGlobalVar<int>("treasure_loot_reward", true);
             string rarity = CPH.GetGlobalVar<string>("treasure_loot_rarity", true);
