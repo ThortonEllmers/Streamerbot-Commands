@@ -70,11 +70,16 @@ public class CPHInline
                 CPH.SendMessage($"👋 Welcome to the stream, {user}! 💜");
             }
 
-            // Track total first-time chatters for today (global counter)
+            // Track total first-time chatters for today (global counter - NON-PERSISTENT)
             string todayCountKey = $"first_timers_{today}";
-            int todayCount = CPH.GetGlobalVar<int>(todayCountKey, true);
+            int todayCount = CPH.GetGlobalVar<int>(todayCountKey, false); // Non-persistent
             todayCount++;
-            CPH.SetGlobalVar(todayCountKey, todayCount, true);
+            CPH.SetGlobalVar(todayCountKey, todayCount, false); // Non-persistent
+
+            // Clean up yesterday's counter (auto-delete old data)
+            DateTime yesterday = DateTime.UtcNow.AddDays(-1);
+            string yesterdayCountKey = $"first_timers_{yesterday.ToString("yyyy-MM-dd")}";
+            CPH.UnsetGlobalVar(yesterdayCountKey, false);
 
             LogSuccess("First Timer Welcomed",
                 $"**User:** {user}\n" +
