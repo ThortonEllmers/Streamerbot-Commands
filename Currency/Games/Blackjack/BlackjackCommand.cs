@@ -180,6 +180,10 @@ public class CPHInline
         int playerTotal = CalculateHandValue(new[] { playerCard1, playerCard2 });
         int dealerVisible = dealerCard1;
 
+        // Get timeout value for display
+        int timeoutSeconds = CPH.GetGlobalVar<int>("config_game_inactivity_timeout", true);
+        if (timeoutSeconds == 0) timeoutSeconds = 60;
+
         // Log game start
         LogCommand("!blackjack", user, $"Bet: ${betAmount} | Start Game");
 
@@ -191,22 +195,25 @@ public class CPHInline
         }
 
         // Show initial hand
-        CPH.SendMessage($"🃏 {user} | Your hand: {FormatCard(playerCard1)}, {FormatCard(playerCard2)} = {playerTotal} | Dealer shows: {FormatCard(dealerVisible)} | Type !blackjack hit or !blackjack stand (10s timer)");
+        CPH.SendMessage($"🃏 {user} | Your hand: {FormatCard(playerCard1)}, {FormatCard(playerCard2)} = {playerTotal} | Dealer shows: {FormatCard(dealerVisible)} | Type !blackjack hit or !blackjack stand ({timeoutSeconds}s timer)");
 
         return true;
     }
 
     private bool HandleHit(string userId, string user, string currencyKey, string currencyName, int winMult)
     {
-        // Check for timeout (10 seconds)
+        // Check for timeout (configurable inactivity timeout)
+        int timeoutSeconds = CPH.GetGlobalVar<int>("config_game_inactivity_timeout", true);
+        if (timeoutSeconds == 0) timeoutSeconds = 60;
+
         string startTimeStr = CPH.GetTwitchUserVarById<string>(userId, "blackjack_start_time", false);
         if (!string.IsNullOrEmpty(startTimeStr))
         {
             DateTime startTime = DateTime.Parse(startTimeStr);
             TimeSpan elapsed = DateTime.UtcNow - startTime;
-            if (elapsed.TotalSeconds > 10)
+            if (elapsed.TotalSeconds > timeoutSeconds)
             {
-                CPH.SendMessage($"⏱️ {user}, time's up! Auto-standing...");
+                CPH.SendMessage($"⏱️ {user}, your Blackjack game timed out after {timeoutSeconds} seconds of inactivity! Auto-standing...");
                 return HandleStand(userId, user, currencyKey, currencyName, winMult);
             }
         }
@@ -269,7 +276,7 @@ public class CPHInline
         // Update timestamp for new action
         CPH.SetTwitchUserVarById(userId, "blackjack_start_time", DateTime.UtcNow.ToString("o"), false);
 
-        CPH.SendMessage($"🃏 {user} drew {FormatCard(newCard)} | Your hand: {FormatHand(newHand)} = {playerTotal} | Dealer shows: {FormatCard(dealerVisible)} | Type !blackjack hit or !blackjack stand (10s timer)");
+        CPH.SendMessage($"🃏 {user} drew {FormatCard(newCard)} | Your hand: {FormatHand(newHand)} = {playerTotal} | Dealer shows: {FormatCard(dealerVisible)} | Type !blackjack hit or !blackjack stand ({timeoutSeconds}s timer)");
 
         return true;
     }
