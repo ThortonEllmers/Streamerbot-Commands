@@ -27,13 +27,22 @@ public class CPHInline
 
             string sheetUrl = CPH.GetGlobalVar<string>("config_wordle_sheet_url", true);
 
+            // Load OBS configuration
+            string obsScene = CPH.GetGlobalVar<string>("config_wordle_obs_scene", true);
+            string obsSource = CPH.GetGlobalVar<string>("config_wordle_obs_source", true);
+
+            CPH.SendMessage("[WORDLE DEBUG] Command triggered");
+            CPH.SendMessage($"[WORDLE DEBUG] OBS Config - Scene: '{obsScene}', Source: '{obsSource}'");
+
             // Fetch word pool from Google Sheet
+            CPH.SendMessage("[WORDLE DEBUG] Fetching word pool...");
             string[] wordPool = FetchWordPoolFromSheet(sheetUrl);
             if (wordPool == null || wordPool.Length == 0)
             {
                 CPH.SendMessage("⚠️ Wordle error: No words available. Please configure the Google Sheet.");
                 return false;
             }
+            CPH.SendMessage($"[WORDLE DEBUG] Loaded {wordPool.Length} words");
 
             if (!CPH.TryGetArg("user", out string user))
             {
@@ -53,20 +62,35 @@ public class CPHInline
             {
                 guess = input0.ToUpper();
             }
+            CPH.SendMessage($"[WORDLE DEBUG] User: {user}, Guess: '{guess}'");
 
-            // Check if user has an active game
-            string currentWord = CPH.GetTwitchUserVarById<string>(userId, "wordle_current_word", false);
-            int guessCount = CPH.GetTwitchUserVarById<int>(userId, "wordle_guess_count", false);
-            string previousGuesses = CPH.GetTwitchUserVarById<string>(userId, "wordle_guesses", false);
+            // Check for timeout before processing
+            if (CheckGameTimeout(user))
+                return false;
+
+            // Check if there's an active GLOBAL game (shared by all players)
+            string currentWord = CPH.GetGlobalVar<string>("wordle_current_word", false);
+            int guessCount = CPH.GetGlobalVar<int>("wordle_guess_count", false);
+            string previousGuesses = CPH.GetGlobalVar<string>("wordle_guesses", false);
+            string gameOwnerId = CPH.GetGlobalVar<string>("wordle_game_owner_id", false);
+
+            CPH.SendMessage($"[WORDLE DEBUG] Active game: Word='{currentWord}', Count={guessCount}, Owner={gameOwnerId}");
 
             // If no active game, start a new one
             if (string.IsNullOrEmpty(currentWord))
             {
-                // Cooldown check
+                // No active game - check if user provided a guess when they should be starting a game
+                if (!string.IsNullOrEmpty(guess))
+                {
+                    CPH.SendMessage($"{user}, there's no active Wordle game! Use !wordle (no word) to start a new game first.");
+                    return false;
+                }
+
+                // Cooldown check (global cooldown for the game)
                 int cooldownSeconds = CPH.GetGlobalVar<int>("config_wordle_cooldown_seconds", true);
                 if (cooldownSeconds == 0) cooldownSeconds = 60;
 
-                string lastPlayedStr = CPH.GetTwitchUserVarById<string>(userId, "wordle_last_played", true);
+                string lastPlayedStr = CPH.GetGlobalVar<string>("wordle_last_played", false);
                 if (!string.IsNullOrEmpty(lastPlayedStr))
                 {
                     DateTime lastPlayed = DateTime.Parse(lastPlayedStr);
@@ -80,7 +104,7 @@ public class CPHInline
                             ? $"{(int)remaining.TotalSeconds}s"
                             : $"{remaining.Minutes}m {remaining.Seconds}s";
 
-                        CPH.SendMessage($"{user}, Wordle cooldown! Wait {timeLeft} before starting a new game.");
+                        CPH.SendMessage($"{user}, Wordle is on cooldown! Wait {timeLeft} before starting a new game.");
                         LogWarning("Wordle Cooldown", $"**User:** {user}\n**Time Remaining:** {timeLeft}");
                         return false;
                     }
@@ -106,10 +130,33 @@ public class CPHInline
                 Random random = new Random(Guid.NewGuid().GetHashCode());
                 currentWord = wordPool[random.Next(wordPool.Length)];
 
-                // Initialize game state
-                CPH.SetTwitchUserVarById(userId, "wordle_current_word", currentWord, false);
-                CPH.SetTwitchUserVarById(userId, "wordle_guess_count", 0, false);
-                CPH.SetTwitchUserVarById(userId, "wordle_guesses", "", false);
+                CPH.SendMessage($"[WORDLE DEBUG] New game - Word: {currentWord}, Owner: {user}");
+
+                // Initialize GLOBAL game state (shared for all viewers)
+                CPH.SetGlobalVar("wordle_current_word", currentWord, false);
+                CPH.SetGlobalVar("wordle_guess_count", 0, false);
+                CPH.SetGlobalVar("wordle_guesses", "", false);
+                CPH.SetGlobalVar("wordle_game_owner_id", userId, false);
+                CPH.SetGlobalVar("wordle_game_owner_name", user, false);
+
+                // Set initial timestamp for timeout tracking
+                UpdateGameTimestamp();
+
+                // Show OBS source
+                CPH.SendMessage("[WORDLE DEBUG] Showing OBS source...");
+                try
+                {
+                    CPH.ObsSetSourceVisibility(obsScene, obsSource, true, 0);
+                    CPH.SendMessage($"[WORDLE DEBUG] OBS source shown: {obsScene}/{obsSource}");
+                }
+                catch (Exception obsEx)
+                {
+                    CPH.SendMessage($"[WORDLE DEBUG] ERROR showing OBS: {obsEx.Message}");
+                }
+
+                // Write JSON for HTML
+                CPH.SendMessage("[WORDLE DEBUG] Writing JSON...");
+                WriteWordleJson(user, currentWord, new string[0], 0, maxGuesses);
 
                 LogInfo("Wordle Game Started",
                     $"**User:** {user}\n**Cost:** ${gameCost}\n**Word:** {currentWord}\n**Max Guesses:** {maxGuesses}");
@@ -118,11 +165,21 @@ public class CPHInline
                 return true;
             }
 
-            // User has an active game - validate guess
+            // There's an active game - check what the user is trying to do
+            string ownerName = CPH.GetGlobalVar<string>("wordle_game_owner_name", false);
+
             if (string.IsNullOrEmpty(guess))
             {
+                // User tried to start a new game but one is already active
                 int guessesLeft = maxGuesses - guessCount;
-                CPH.SendMessage($"{user}, you have a Wordle game in progress! Type !wordle [word] to make a guess. Guesses left: {guessesLeft}");
+                CPH.SendMessage($"{user}, there is currently a game by {ownerName}! Please try the command once they have finished their game. Guesses left: {guessesLeft}/{maxGuesses}");
+                return false;
+            }
+
+            // User provided a guess - check if they're the owner
+            if (userId != gameOwnerId)
+            {
+                CPH.SendMessage($"{user}, only {ownerName} can guess in their Wordle game! Wait for them to finish.");
                 return false;
             }
 
@@ -141,49 +198,89 @@ public class CPHInline
             }
 
             // Process the guess
+            CPH.SendMessage($"[WORDLE DEBUG] Processing guess: {guess}");
             guessCount++;
             string feedback = GetWordleFeedback(guess, currentWord);
+            CPH.SendMessage($"[WORDLE DEBUG] Feedback: {feedback}");
 
-            // Store the guess
+            // Store the guess in GLOBAL vars
             previousGuesses = string.IsNullOrEmpty(previousGuesses) ? guess : previousGuesses + "," + guess;
-            CPH.SetTwitchUserVarById(userId, "wordle_guesses", previousGuesses, false);
-            CPH.SetTwitchUserVarById(userId, "wordle_guess_count", guessCount, false);
+            CPH.SetGlobalVar("wordle_guesses", previousGuesses, false);
+            CPH.SetGlobalVar("wordle_guess_count", guessCount, false);
+
+            // Update timestamp on each guess to reset the timeout
+            UpdateGameTimestamp();
+
+            // Update JSON with guesses
+            string[] guessArray = previousGuesses.Split(',');
+            WriteWordleJson(user, currentWord, guessArray, guessCount, maxGuesses);
 
             // Check if won
             if (guess == currentWord)
             {
+                CPH.SendMessage("[WORDLE DEBUG] WIN detected!");
+
                 // Won!
                 int balance = CPH.GetTwitchUserVarById<int>(userId, currencyKey, true);
                 balance += winReward;
                 CPH.SetTwitchUserVarById(userId, currencyKey, balance, true);
 
-                // Clear game state
-                CPH.SetTwitchUserVarById(userId, "wordle_current_word", "", false);
-                CPH.SetTwitchUserVarById(userId, "wordle_guess_count", 0, false);
-                CPH.SetTwitchUserVarById(userId, "wordle_guesses", "", false);
-                CPH.SetTwitchUserVarById(userId, "wordle_last_played", DateTime.UtcNow.ToString("o"), true);
-
                 LogSuccess("Wordle Win",
                     $"**User:** {user}\n**Word:** {currentWord}\n**Guesses:** {guessCount}/{maxGuesses}\n**Reward:** ${winReward}\n**New Balance:** ${balance}");
 
                 CPH.SendMessage($"🎉 {feedback} | {user} WON Wordle in {guessCount}/{maxGuesses} guesses! +${winReward} {currencyName}! Balance: ${balance}");
+
+                // Hide OBS source after delay
+                CPH.SendMessage("[WORDLE DEBUG] Hiding OBS source in 5 seconds...");
+                System.Threading.Tasks.Task.Delay(5000).ContinueWith(_ =>
+                {
+                    try
+                    {
+                        CPH.ObsSetSourceVisibility(obsScene, obsSource, false, 0);
+                        CPH.SendMessage("[WORDLE DEBUG] OBS source hidden");
+                    }
+                    catch (Exception ex)
+                    {
+                        CPH.SendMessage($"[WORDLE DEBUG] ERROR hiding OBS: {ex.Message}");
+                    }
+                });
+
+                // Clear game state and set cooldown
+                ClearGameState();
+                CPH.SetGlobalVar("wordle_last_played", DateTime.UtcNow.ToString("o"), false);
+
                 return true;
             }
 
             // Check if out of guesses
             if (guessCount >= maxGuesses)
             {
+                CPH.SendMessage("[WORDLE DEBUG] LOSS detected!");
+
                 // Lost
                 LogWarning("Wordle Loss",
                     $"**User:** {user}\n**Word:** {currentWord}\n**Guesses:** {guessCount}/{maxGuesses}");
 
                 CPH.SendMessage($"❌ {feedback} | {user} ran out of guesses! The word was: {currentWord}");
 
-                // Clear game state
-                CPH.SetTwitchUserVarById(userId, "wordle_current_word", "", false);
-                CPH.SetTwitchUserVarById(userId, "wordle_guess_count", 0, false);
-                CPH.SetTwitchUserVarById(userId, "wordle_guesses", "", false);
-                CPH.SetTwitchUserVarById(userId, "wordle_last_played", DateTime.UtcNow.ToString("o"), true);
+                // Hide OBS source after delay
+                CPH.SendMessage("[WORDLE DEBUG] Hiding OBS source in 5 seconds...");
+                System.Threading.Tasks.Task.Delay(5000).ContinueWith(_ =>
+                {
+                    try
+                    {
+                        CPH.ObsSetSourceVisibility(obsScene, obsSource, false, 0);
+                        CPH.SendMessage("[WORDLE DEBUG] OBS source hidden");
+                    }
+                    catch (Exception ex)
+                    {
+                        CPH.SendMessage($"[WORDLE DEBUG] ERROR hiding OBS: {ex.Message}");
+                    }
+                });
+
+                // Clear game state and set cooldown
+                ClearGameState();
+                CPH.SetGlobalVar("wordle_last_played", DateTime.UtcNow.ToString("o"), false);
 
                 return true;
             }
@@ -203,6 +300,159 @@ public class CPHInline
             return false;
         }
     }
+
+    // ═══════════════════════════════════════════════════════════
+    // TIMEOUT MANAGEMENT METHODS
+    // ═══════════════════════════════════════════════════════════
+
+    private void UpdateGameTimestamp()
+    {
+        CPH.SetGlobalVar("wordle_last_action", DateTime.UtcNow.ToString("o"), false);
+    }
+
+    private bool CheckGameTimeout(string user)
+    {
+        // Always use 60 seconds for Wordle timeout
+        int timeoutSeconds = 60;
+
+        string lastActionStr = CPH.GetGlobalVar<string>("wordle_last_action", false);
+
+        if (string.IsNullOrEmpty(lastActionStr))
+            return false; // No active game
+
+        DateTime lastAction = DateTime.Parse(lastActionStr);
+        TimeSpan elapsed = DateTime.UtcNow - lastAction;
+
+        if (elapsed.TotalSeconds > timeoutSeconds)
+        {
+            string ownerName = CPH.GetGlobalVar<string>("wordle_game_owner_name", false);
+            CPH.SendMessage($"⏱️ Wordle game by {ownerName} timed out after {timeoutSeconds} seconds of inactivity!");
+            LogWarning("Wordle Timeout", $"**Owner:** {ownerName}\n**Idle Time:** {elapsed.TotalSeconds:F1} seconds");
+            ClearGameState();
+            return true;
+        }
+
+        return false;
+    }
+
+    private void ClearGameState()
+    {
+        CPH.SetGlobalVar("wordle_current_word", "", false);
+        CPH.SetGlobalVar("wordle_guess_count", 0, false);
+        CPH.SetGlobalVar("wordle_guesses", "", false);
+        CPH.SetGlobalVar("wordle_last_action", "", false);
+        CPH.SetGlobalVar("wordle_game_owner_id", "", false);
+        CPH.SetGlobalVar("wordle_game_owner_name", "", false);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // JSON WRITING FOR HTML COMMUNICATION
+    // ═══════════════════════════════════════════════════════════
+
+    private void WriteWordleJson(string user, string targetWord, string[] guesses, int guessCount, int maxGuesses)
+    {
+        try
+        {
+            // Use configurable path or default to GitHub repo structure
+            string jsonPath = CPH.GetGlobalVar<string>("config_wordle_json_path", true);
+
+            // If not configured, use the source code location (GitHub repo)
+            if (string.IsNullOrEmpty(jsonPath))
+            {
+                // Default to GitHub repo path where wordle.html is located
+                jsonPath = @"G:\GitHub Projects\StreamerBot-Commands\Currency\Games\Wordle\wordle-data.json";
+            }
+
+            CPH.SendMessage($"[WORDLE DEBUG] JSON Path: {jsonPath}");
+
+            // Ensure directory exists
+            string directory = System.IO.Path.GetDirectoryName(jsonPath);
+            if (!System.IO.Directory.Exists(directory))
+            {
+                CPH.SendMessage($"[WORDLE DEBUG] Creating directory: {directory}");
+                System.IO.Directory.CreateDirectory(directory);
+            }
+
+            // Build guess data with feedback
+            StringBuilder guessData = new StringBuilder();
+            guessData.Append("[");
+
+            for (int i = 0; i < guesses.Length; i++)
+            {
+                if (i > 0) guessData.Append(",");
+
+                string guess = guesses[i];
+                string feedback = GetWordleFeedback(guess, targetWord);
+
+                // Build letters array with individual feedback
+                guessData.Append("{");
+                guessData.Append($"\"word\":\"{guess}\",");
+                guessData.Append("\"letters\":[");
+
+                // Parse emoji feedback properly (emojis are multi-byte in C#)
+                string[] feedbackEmojis = new string[5];
+                int emojiIndex = 0;
+                for (int charIndex = 0; charIndex < feedback.Length && emojiIndex < 5; charIndex++)
+                {
+                    if (char.IsHighSurrogate(feedback[charIndex]))
+                    {
+                        // Get the full emoji (2 characters for surrogate pair)
+                        feedbackEmojis[emojiIndex] = feedback.Substring(charIndex, 2);
+                        emojiIndex++;
+                        charIndex++; // Skip the low surrogate
+                    }
+                    else
+                    {
+                        feedbackEmojis[emojiIndex] = feedback[charIndex].ToString();
+                        emojiIndex++;
+                    }
+                }
+
+                for (int j = 0; j < 5; j++)
+                {
+                    if (j > 0) guessData.Append(",");
+
+                    string status = "absent";
+                    if (feedbackEmojis[j] == "🟩") status = "correct";
+                    else if (feedbackEmojis[j] == "🟨") status = "present";
+
+                    guessData.Append("{");
+                    guessData.Append($"\"letter\":\"{guess[j]}\",");
+                    guessData.Append($"\"status\":\"{status}\"");
+                    guessData.Append("}");
+                }
+
+                guessData.Append("]");
+                guessData.Append("}");
+            }
+
+            guessData.Append("]");
+
+            // Build complete JSON
+            StringBuilder json = new StringBuilder();
+            json.Append("{");
+            json.Append($"\"user\":\"{EscapeJson(user)}\",");
+            json.Append($"\"guesses\":{guessData},");
+            json.Append($"\"guessCount\":{guessCount},");
+            json.Append($"\"maxGuesses\":{maxGuesses},");
+            json.Append($"\"gameActive\":true,");
+            json.Append($"\"timestamp\":\"{DateTime.UtcNow.ToString("o")}\"");
+            json.Append("}");
+
+            // Write to file
+            System.IO.File.WriteAllText(jsonPath, json.ToString());
+            CPH.SendMessage($"[WORDLE DEBUG] JSON written successfully");
+        }
+        catch (Exception ex)
+        {
+            CPH.SendMessage($"[WORDLE DEBUG] ERROR writing JSON: {ex.Message}");
+            CPH.LogError($"Wordle JSON write error: {ex.Message}");
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // WORDLE FEEDBACK METHODS
+    // ═══════════════════════════════════════════════════════════
 
     private string GetWordleFeedback(string guess, string answer)
     {
