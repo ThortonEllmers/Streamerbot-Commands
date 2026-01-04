@@ -93,27 +93,30 @@
             position: absolute;
             top: 20px;
             left: 0;
+            right: 0;
             width: 100%;
             text-align: center;
             color: white;
             font-family: Arial, sans-serif;
-            font-size: 48px;
+            font-size: 72px;
             font-weight: bold;
             text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.9);
             padding: 20px 40px 10px 40px;
             display: none;
             z-index: 10;
+            box-sizing: border-box;
+            word-wrap: break-word;
         }
 
         #video-requester {
             position: absolute;
-            top: 85px;
+            top: 130px;
             left: 0;
             width: 100%;
             text-align: center;
             color: rgba(255, 255, 255, 0.85);
             font-family: Arial, sans-serif;
-            font-size: 22px;
+            font-size: 36px;
             font-weight: normal;
             font-style: italic;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
@@ -647,8 +650,22 @@
                                 // Update video title if provided
                                 if (data.title) {
                                     console.log('Setting video title to:', data.title);
-                                    document.getElementById('video-title').textContent = data.title;
-                                    document.getElementById('video-title').style.display = 'block';
+                                    const titleEl = document.getElementById('video-title');
+                                    titleEl.textContent = data.title;
+
+                                    // Dynamically adjust font size based on title length
+                                    const titleLength = data.title.length;
+                                    if (titleLength > 80) {
+                                        titleEl.style.fontSize = '36px';
+                                    } else if (titleLength > 60) {
+                                        titleEl.style.fontSize = '44px';
+                                    } else if (titleLength > 40) {
+                                        titleEl.style.fontSize = '56px';
+                                    } else {
+                                        titleEl.style.fontSize = '72px';
+                                    }
+
+                                    titleEl.style.display = 'block';
                                 }
 
                                 // Update requester if provided
