@@ -72,19 +72,32 @@ public class CPHInline
                 guess = input0.ToUpper();
             }
 
-            // Check if user has an active game
-            string currentWord = CPH.GetTwitchUserVarById<string>(userId, "wordle_html_current_word", false);
-            int guessCount = CPH.GetTwitchUserVarById<int>(userId, "wordle_html_guess_count", false);
-            string previousGuesses = CPH.GetTwitchUserVarById<string>(userId, "wordle_html_guesses", false);
+            // Check for timeout before processing
+            if (CheckGameTimeout())
+                return false;
+
+            // Check if there's an active GLOBAL game (shared by all players)
+            string currentWord = CPH.GetGlobalVar<string>("wordle_html_current_word", true);
+            int guessCount = CPH.GetGlobalVar<int>("wordle_html_guess_count", true);
+            string previousGuesses = CPH.GetGlobalVar<string>("wordle_html_guesses", true);
+            string gameOwnerId = CPH.GetGlobalVar<string>("wordle_html_game_owner_id", true);
+            string gameOwnerName = CPH.GetGlobalVar<string>("wordle_html_game_owner_name", true);
 
             // If no active game, start a new one
             if (string.IsNullOrEmpty(currentWord))
             {
-                // Cooldown check
+                // No active game - check if user provided a guess when they should be starting a game
+                if (!string.IsNullOrEmpty(guess))
+                {
+                    CPH.SendMessage($"{user}, there's no active Wordle game! Use !wordle (no word) to start a new game first.");
+                    return false;
+                }
+
+                // Cooldown check (global cooldown for the game)
                 int cooldownSeconds = CPH.GetGlobalVar<int>("config_wordle_cooldown_seconds", true);
                 if (cooldownSeconds == 0) cooldownSeconds = 60;
 
-                string lastPlayedStr = CPH.GetTwitchUserVarById<string>(userId, "wordle_html_last_played", true);
+                string lastPlayedStr = CPH.GetGlobalVar<string>("wordle_html_last_played", true);
                 if (!string.IsNullOrEmpty(lastPlayedStr))
                 {
                     DateTime lastPlayed = DateTime.Parse(lastPlayedStr);
@@ -98,7 +111,7 @@ public class CPHInline
                             ? $"{(int)remaining.TotalSeconds}s"
                             : $"{remaining.Minutes}m {remaining.Seconds}s";
 
-                        CPH.SendMessage($"{user}, Wordle cooldown! Wait {timeLeft} before starting a new game.");
+                        CPH.SendMessage($"{user}, Wordle is on cooldown! Wait {timeLeft} before starting a new game.");
                         LogWarning("Wordle HTML Cooldown", $"**User:** {user}\n**Time Remaining:** {timeLeft}");
                         return false;
                     }
@@ -124,10 +137,15 @@ public class CPHInline
                 Random random = new Random(Guid.NewGuid().GetHashCode());
                 currentWord = wordPool[random.Next(wordPool.Length)];
 
-                // Initialize game state
-                CPH.SetTwitchUserVarById(userId, "wordle_html_current_word", currentWord, false);
-                CPH.SetTwitchUserVarById(userId, "wordle_html_guess_count", 0, false);
-                CPH.SetTwitchUserVarById(userId, "wordle_html_guesses", "", false);
+                // Initialize GLOBAL game state (shared for all viewers) - PERSISTED
+                CPH.SetGlobalVar("wordle_html_current_word", currentWord, true);
+                CPH.SetGlobalVar("wordle_html_guess_count", 0, true);
+                CPH.SetGlobalVar("wordle_html_guesses", "", true);
+                CPH.SetGlobalVar("wordle_html_game_owner_id", userId, true);
+                CPH.SetGlobalVar("wordle_html_game_owner_name", user, true);
+
+                // Set initial timestamp for timeout tracking
+                UpdateGameTimestamp();
 
                 // Update HTML
                 UpdateHtmlFile(htmlPath, currentWord, "", 0, maxGuesses, user, false, false);
@@ -145,11 +163,19 @@ public class CPHInline
                 return true;
             }
 
-            // User has an active game - validate guess
+            // There's an active game - check what the user is trying to do
             if (string.IsNullOrEmpty(guess))
             {
+                // User tried to start a new game but one is already active
                 int guessesLeft = maxGuesses - guessCount;
-                CPH.SendMessage($"{user}, you have a Wordle game in progress! Type !wordle [word] to guess. Guesses left: {guessesLeft}");
+                CPH.SendMessage($"{user}, there is currently a game by {gameOwnerName}! Please try the command once they have finished their game. Guesses left: {guessesLeft}/{maxGuesses}");
+                return false;
+            }
+
+            // User provided a guess - check if they're the owner
+            if (userId != gameOwnerId)
+            {
+                CPH.SendMessage($"{user}, only {gameOwnerName} can guess in their Wordle game! Wait for them to finish.");
                 return false;
             }
 
@@ -171,10 +197,13 @@ public class CPHInline
             guessCount++;
             string feedback = GetWordleFeedback(guess, currentWord);
 
-            // Store the guess
+            // Store the guess in GLOBAL vars (PERSISTED)
             previousGuesses = string.IsNullOrEmpty(previousGuesses) ? guess : previousGuesses + "," + guess;
-            CPH.SetTwitchUserVarById(userId, "wordle_html_guesses", previousGuesses, false);
-            CPH.SetTwitchUserVarById(userId, "wordle_html_guess_count", guessCount, false);
+            CPH.SetGlobalVar("wordle_html_guesses", previousGuesses, true);
+            CPH.SetGlobalVar("wordle_html_guess_count", guessCount, true);
+
+            // Update timestamp on each guess to reset the timeout
+            UpdateGameTimestamp();
 
             // Check if won
             if (guess == currentWord)
@@ -197,10 +226,8 @@ public class CPHInline
                 }
 
                 // Clear game state
-                CPH.SetTwitchUserVarById(userId, "wordle_html_current_word", "", false);
-                CPH.SetTwitchUserVarById(userId, "wordle_html_guess_count", 0, false);
-                CPH.SetTwitchUserVarById(userId, "wordle_html_guesses", "", false);
-                CPH.SetTwitchUserVarById(userId, "wordle_html_last_played", DateTime.UtcNow.ToString("o"), true);
+                ClearGameState();
+                CPH.SetGlobalVar("wordle_html_last_played", DateTime.UtcNow.ToString("o"), true);
 
                 LogSuccess("Wordle HTML Win",
                     $"**User:** {user}\n**Word:** {currentWord}\n**Guesses:** {guessCount}/{maxGuesses}\n**Reward:** ${winReward}\n**New Balance:** ${balance}");
@@ -231,10 +258,8 @@ public class CPHInline
                 CPH.SendMessage($"❌ {feedback} | {user} ran out of guesses! The word was: {currentWord}");
 
                 // Clear game state
-                CPH.SetTwitchUserVarById(userId, "wordle_html_current_word", "", false);
-                CPH.SetTwitchUserVarById(userId, "wordle_html_guess_count", 0, false);
-                CPH.SetTwitchUserVarById(userId, "wordle_html_guesses", "", false);
-                CPH.SetTwitchUserVarById(userId, "wordle_html_last_played", DateTime.UtcNow.ToString("o"), true);
+                ClearGameState();
+                CPH.SetGlobalVar("wordle_html_last_played", DateTime.UtcNow.ToString("o"), true);
 
                 return true;
             }
@@ -255,6 +280,50 @@ public class CPHInline
             CPH.LogError($"Wordle HTML error: {ex.Message}");
             return false;
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // TIMEOUT MANAGEMENT METHODS
+    // ═══════════════════════════════════════════════════════════
+
+    private void UpdateGameTimestamp()
+    {
+        CPH.SetGlobalVar("wordle_html_last_action", DateTime.UtcNow.ToString("o"), true);
+    }
+
+    private bool CheckGameTimeout()
+    {
+        // Always use 60 seconds for Wordle timeout
+        int timeoutSeconds = 60;
+
+        string lastActionStr = CPH.GetGlobalVar<string>("wordle_html_last_action", true);
+
+        if (string.IsNullOrEmpty(lastActionStr))
+            return false; // No active game
+
+        DateTime lastAction = DateTime.Parse(lastActionStr);
+        TimeSpan elapsed = DateTime.UtcNow - lastAction;
+
+        if (elapsed.TotalSeconds > timeoutSeconds)
+        {
+            string ownerName = CPH.GetGlobalVar<string>("wordle_html_game_owner_name", true);
+            CPH.SendMessage($"⏱️ Wordle game by {ownerName} timed out after {timeoutSeconds} seconds of inactivity!");
+            LogWarning("Wordle HTML Timeout", $"**Owner:** {ownerName}\n**Idle Time:** {elapsed.TotalSeconds:F1} seconds");
+            ClearGameState();
+            return true;
+        }
+
+        return false;
+    }
+
+    private void ClearGameState()
+    {
+        CPH.SetGlobalVar("wordle_html_current_word", "", true);
+        CPH.SetGlobalVar("wordle_html_guess_count", 0, true);
+        CPH.SetGlobalVar("wordle_html_guesses", "", true);
+        CPH.SetGlobalVar("wordle_html_last_action", "", true);
+        CPH.SetGlobalVar("wordle_html_game_owner_id", "", true);
+        CPH.SetGlobalVar("wordle_html_game_owner_name", "", true);
     }
 
     private void UpdateHtmlFile(string htmlPath, string targetWord, string guesses, int guessCount, int maxGuesses, string user, bool gameOver, bool won)
@@ -361,6 +430,7 @@ public class CPHInline
             html.AppendLine("<body>");
             html.AppendLine("    <div class=\"container\">");
             html.AppendLine("        <h1>HexEchoTV<br>Wordle Challenge</h1>");
+            html.AppendLine($"        <div style=\"text-align: center; font-size: 24px; margin-bottom: 20px; color: #aaa;\">Player: {user}</div>");
 
             if (!gameOver)
             {
@@ -371,13 +441,18 @@ public class CPHInline
                 html.AppendLine($"        <div class=\"word-display\">{targetWord}</div>");
             }
 
-            // Display guesses
-            if (guessArray.Length > 0)
+            // Display ALL 6 rows (guesses + empty)
+            html.AppendLine("        <div class=\"guesses-container\">");
+
+            // Show all 6 rows
+            for (int rowIndex = 0; rowIndex < maxGuesses; rowIndex++)
             {
-                html.AppendLine("        <div class=\"guesses-container\">");
-                foreach (string guessWord in guessArray)
+                html.AppendLine("            <div class=\"guess-row\">");
+
+                if (rowIndex < guessArray.Length)
                 {
-                    html.AppendLine("            <div class=\"guess-row\">");
+                    // This row has a guess - show with colors
+                    string guessWord = guessArray[rowIndex];
 
                     char[] answerChars = targetWord.ToCharArray();
                     char[] guessChars = guessWord.ToCharArray();
@@ -427,11 +502,20 @@ public class CPHInline
                     {
                         html.AppendLine($"                <div class=\"letter-box {classes[i]}\">{guessChars[i]}</div>");
                     }
-
-                    html.AppendLine("            </div>");
                 }
-                html.AppendLine("        </div>");
+                else
+                {
+                    // This row is empty - show empty boxes
+                    for (int i = 0; i < 5; i++)
+                    {
+                        html.AppendLine("                <div class=\"letter-box\" style=\"background-color: transparent; border-color: #3a3a3c;\"></div>");
+                    }
+                }
+
+                html.AppendLine("            </div>");
             }
+
+            html.AppendLine("        </div>");
 
             // Game status
             if (gameOver)
