@@ -69,16 +69,19 @@ public class CPHInline
                 return false;
 
             // Check if there's an active GLOBAL game (shared by all players)
-            string currentWord = CPH.GetGlobalVar<string>("wordle_current_word", false);
-            int guessCount = CPH.GetGlobalVar<int>("wordle_guess_count", false);
-            string previousGuesses = CPH.GetGlobalVar<string>("wordle_guesses", false);
-            string gameOwnerId = CPH.GetGlobalVar<string>("wordle_game_owner_id", false);
+            string currentWord = CPH.GetGlobalVar<string>("wordle_current_word", true);
+            int guessCount = CPH.GetGlobalVar<int>("wordle_guess_count", true);
+            string previousGuesses = CPH.GetGlobalVar<string>("wordle_guesses", true);
+            string gameOwnerId = CPH.GetGlobalVar<string>("wordle_game_owner_id", true);
+            string gameOwnerName = CPH.GetGlobalVar<string>("wordle_game_owner_name", true);
 
-            CPH.SendMessage($"[WORDLE DEBUG] Active game: Word='{currentWord}', Count={guessCount}, Owner={gameOwnerId}");
+            CPH.SendMessage($"[WORDLE DEBUG] Active game check - Word exists: {!string.IsNullOrEmpty(currentWord)}, Owner: {gameOwnerName}, Current user: {user}");
 
             // If no active game, start a new one
             if (string.IsNullOrEmpty(currentWord))
             {
+                CPH.SendMessage("[WORDLE DEBUG] No active game - can start new game");
+
                 // No active game - check if user provided a guess when they should be starting a game
                 if (!string.IsNullOrEmpty(guess))
                 {
@@ -90,7 +93,7 @@ public class CPHInline
                 int cooldownSeconds = CPH.GetGlobalVar<int>("config_wordle_cooldown_seconds", true);
                 if (cooldownSeconds == 0) cooldownSeconds = 60;
 
-                string lastPlayedStr = CPH.GetGlobalVar<string>("wordle_last_played", false);
+                string lastPlayedStr = CPH.GetGlobalVar<string>("wordle_last_played", true);
                 if (!string.IsNullOrEmpty(lastPlayedStr))
                 {
                     DateTime lastPlayed = DateTime.Parse(lastPlayedStr);
@@ -132,12 +135,12 @@ public class CPHInline
 
                 CPH.SendMessage($"[WORDLE DEBUG] New game - Word: {currentWord}, Owner: {user}");
 
-                // Initialize GLOBAL game state (shared for all viewers)
-                CPH.SetGlobalVar("wordle_current_word", currentWord, false);
-                CPH.SetGlobalVar("wordle_guess_count", 0, false);
-                CPH.SetGlobalVar("wordle_guesses", "", false);
-                CPH.SetGlobalVar("wordle_game_owner_id", userId, false);
-                CPH.SetGlobalVar("wordle_game_owner_name", user, false);
+                // Initialize GLOBAL game state (shared for all viewers) - PERSISTED
+                CPH.SetGlobalVar("wordle_current_word", currentWord, true);
+                CPH.SetGlobalVar("wordle_guess_count", 0, true);
+                CPH.SetGlobalVar("wordle_guesses", "", true);
+                CPH.SetGlobalVar("wordle_game_owner_id", userId, true);
+                CPH.SetGlobalVar("wordle_game_owner_name", user, true);
 
                 // Set initial timestamp for timeout tracking
                 UpdateGameTimestamp();
@@ -166,20 +169,20 @@ public class CPHInline
             }
 
             // There's an active game - check what the user is trying to do
-            string ownerName = CPH.GetGlobalVar<string>("wordle_game_owner_name", false);
+            CPH.SendMessage($"[WORDLE DEBUG] Active game exists - Owner: {gameOwnerName}, Trying: {user}");
 
             if (string.IsNullOrEmpty(guess))
             {
                 // User tried to start a new game but one is already active
                 int guessesLeft = maxGuesses - guessCount;
-                CPH.SendMessage($"{user}, there is currently a game by {ownerName}! Please try the command once they have finished their game. Guesses left: {guessesLeft}/{maxGuesses}");
+                CPH.SendMessage($"{user}, there is currently a game by {gameOwnerName}! Please try the command once they have finished their game. Guesses left: {guessesLeft}/{maxGuesses}");
                 return false;
             }
 
             // User provided a guess - check if they're the owner
             if (userId != gameOwnerId)
             {
-                CPH.SendMessage($"{user}, only {ownerName} can guess in their Wordle game! Wait for them to finish.");
+                CPH.SendMessage($"{user}, only {gameOwnerName} can guess in their Wordle game! Wait for them to finish.");
                 return false;
             }
 
@@ -203,10 +206,10 @@ public class CPHInline
             string feedback = GetWordleFeedback(guess, currentWord);
             CPH.SendMessage($"[WORDLE DEBUG] Feedback: {feedback}");
 
-            // Store the guess in GLOBAL vars
+            // Store the guess in GLOBAL vars (PERSISTED)
             previousGuesses = string.IsNullOrEmpty(previousGuesses) ? guess : previousGuesses + "," + guess;
-            CPH.SetGlobalVar("wordle_guesses", previousGuesses, false);
-            CPH.SetGlobalVar("wordle_guess_count", guessCount, false);
+            CPH.SetGlobalVar("wordle_guesses", previousGuesses, true);
+            CPH.SetGlobalVar("wordle_guess_count", guessCount, true);
 
             // Update timestamp on each guess to reset the timeout
             UpdateGameTimestamp();
@@ -247,7 +250,7 @@ public class CPHInline
 
                 // Clear game state and set cooldown
                 ClearGameState();
-                CPH.SetGlobalVar("wordle_last_played", DateTime.UtcNow.ToString("o"), false);
+                CPH.SetGlobalVar("wordle_last_played", DateTime.UtcNow.ToString("o"), true);
 
                 return true;
             }
@@ -280,7 +283,7 @@ public class CPHInline
 
                 // Clear game state and set cooldown
                 ClearGameState();
-                CPH.SetGlobalVar("wordle_last_played", DateTime.UtcNow.ToString("o"), false);
+                CPH.SetGlobalVar("wordle_last_played", DateTime.UtcNow.ToString("o"), true);
 
                 return true;
             }
@@ -307,7 +310,7 @@ public class CPHInline
 
     private void UpdateGameTimestamp()
     {
-        CPH.SetGlobalVar("wordle_last_action", DateTime.UtcNow.ToString("o"), false);
+        CPH.SetGlobalVar("wordle_last_action", DateTime.UtcNow.ToString("o"), true);
     }
 
     private bool CheckGameTimeout(string user)
@@ -315,7 +318,7 @@ public class CPHInline
         // Always use 60 seconds for Wordle timeout
         int timeoutSeconds = 60;
 
-        string lastActionStr = CPH.GetGlobalVar<string>("wordle_last_action", false);
+        string lastActionStr = CPH.GetGlobalVar<string>("wordle_last_action", true);
 
         if (string.IsNullOrEmpty(lastActionStr))
             return false; // No active game
@@ -325,7 +328,7 @@ public class CPHInline
 
         if (elapsed.TotalSeconds > timeoutSeconds)
         {
-            string ownerName = CPH.GetGlobalVar<string>("wordle_game_owner_name", false);
+            string ownerName = CPH.GetGlobalVar<string>("wordle_game_owner_name", true);
             CPH.SendMessage($"⏱️ Wordle game by {ownerName} timed out after {timeoutSeconds} seconds of inactivity!");
             LogWarning("Wordle Timeout", $"**Owner:** {ownerName}\n**Idle Time:** {elapsed.TotalSeconds:F1} seconds");
             ClearGameState();
@@ -337,12 +340,13 @@ public class CPHInline
 
     private void ClearGameState()
     {
-        CPH.SetGlobalVar("wordle_current_word", "", false);
-        CPH.SetGlobalVar("wordle_guess_count", 0, false);
-        CPH.SetGlobalVar("wordle_guesses", "", false);
-        CPH.SetGlobalVar("wordle_last_action", "", false);
-        CPH.SetGlobalVar("wordle_game_owner_id", "", false);
-        CPH.SetGlobalVar("wordle_game_owner_name", "", false);
+        CPH.SendMessage("[WORDLE DEBUG] Clearing game state");
+        CPH.SetGlobalVar("wordle_current_word", "", true);
+        CPH.SetGlobalVar("wordle_guess_count", 0, true);
+        CPH.SetGlobalVar("wordle_guesses", "", true);
+        CPH.SetGlobalVar("wordle_last_action", "", true);
+        CPH.SetGlobalVar("wordle_game_owner_id", "", true);
+        CPH.SetGlobalVar("wordle_game_owner_name", "", true);
     }
 
     // ═══════════════════════════════════════════════════════════
