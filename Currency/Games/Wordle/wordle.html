@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HexEchoTV Wordle</title>
+    <script>
+        // Auto-reload every 2 seconds to update OBS browser source
+        setTimeout(function() {
+            location.reload();
+        }, 2000);
+    </script>
     <style>
         body {
             margin: 0;
@@ -29,11 +35,13 @@
             color: #6c63ff;
             text-shadow: 0 0 20px rgba(108, 99, 255, 0.8);
         }
-        .player-info {
+        .word-display {
+            font-size: 72px;
+            font-weight: bold;
             text-align: center;
-            font-size: 24px;
-            margin-bottom: 20px;
-            color: #aaa;
+            margin: 20px 0;
+            letter-spacing: 15px;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
         }
         .guesses-container {
             margin-top: 30px;
@@ -54,11 +62,6 @@
             font-size: 32px;
             font-weight: bold;
             border-radius: 5px;
-            background-color: #2a2a2c;
-        }
-        .letter-box.empty {
-            background-color: transparent;
-            border-color: #3a3a3c;
         }
         .correct {
             background-color: #538d4e;
@@ -77,98 +80,68 @@
             text-align: center;
             font-size: 24px;
         }
-        .guesses-left {
-            color: #6c63ff;
+        .win-text {
+            color: #538d4e;
             font-weight: bold;
+            font-size: 36px;
+        }
+        .lose-text {
+            color: #ff6b6b;
+            font-weight: bold;
+            font-size: 36px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>HexEchoTV<br>Wordle Challenge</h1>
-        <div class="player-info" id="playerInfo">Loading...</div>
-        <div class="guesses-container" id="guessesContainer">
-            <!-- Dynamically populated by JavaScript -->
+        <div style="text-align: center; font-size: 24px; margin-bottom: 20px; color: #aaa;">Player: HexEchoTV</div>
+        <div class="word-display">ERUPT</div>
+        <div class="guesses-container">
+            <div class="guess-row">
+                <div class="letter-box absent">G</div>
+                <div class="letter-box correct">R</div>
+                <div class="letter-box present">E</div>
+                <div class="letter-box absent">A</div>
+                <div class="letter-box correct">T</div>
+            </div>
+            <div class="guess-row">
+                <div class="letter-box absent">B</div>
+                <div class="letter-box correct">R</div>
+                <div class="letter-box absent">I</div>
+                <div class="letter-box present">E</div>
+                <div class="letter-box correct">T</div>
+            </div>
+            <div class="guess-row">
+                <div class="letter-box correct">E</div>
+                <div class="letter-box correct">R</div>
+                <div class="letter-box absent">O</div>
+                <div class="letter-box absent">L</div>
+                <div class="letter-box correct">T</div>
+            </div>
+            <div class="guess-row">
+                <div class="letter-box correct">E</div>
+                <div class="letter-box correct">R</div>
+                <div class="letter-box absent">A</div>
+                <div class="letter-box absent">S</div>
+                <div class="letter-box correct">T</div>
+            </div>
+            <div class="guess-row">
+                <div class="letter-box correct">E</div>
+                <div class="letter-box correct">R</div>
+                <div class="letter-box absent">Q</div>
+                <div class="letter-box absent">M</div>
+                <div class="letter-box correct">T</div>
+            </div>
+            <div class="guess-row">
+                <div class="letter-box correct">E</div>
+                <div class="letter-box correct">R</div>
+                <div class="letter-box absent">K</div>
+                <div class="letter-box absent">Q</div>
+                <div class="letter-box correct">T</div>
+            </div>
         </div>
-        <div class="game-status" id="gameStatus">
-            <!-- Dynamically populated by JavaScript -->
-        </div>
+        <div class="game-status lose-text">❌ Game Over ❌</div>
     </div>
-
-    <script>
-        let lastUpdate = 0;
-
-        async function loadGameData() {
-            try {
-                // Add timestamp to prevent caching
-                const response = await fetch('wordle-data.json?t=' + new Date().getTime());
-
-                if (!response.ok) {
-                    console.error('Failed to load game data:', response.status);
-                    return;
-                }
-
-                const data = await response.json();
-
-                // Only update if timestamp is different (new game state)
-                if (data.timestamp === lastUpdate) {
-                    return;
-                }
-                lastUpdate = data.timestamp;
-
-                // Update player info
-                const playerInfo = document.getElementById('playerInfo');
-                playerInfo.textContent = `Player: ${data.user}`;
-
-                // Update guesses
-                const container = document.getElementById('guessesContainer');
-                container.innerHTML = '';
-
-                // Show all guesses made
-                data.guesses.forEach(guess => {
-                    const row = document.createElement('div');
-                    row.className = 'guess-row';
-
-                    guess.letters.forEach(letterData => {
-                        const box = document.createElement('div');
-                        box.className = `letter-box ${letterData.status}`;
-                        box.textContent = letterData.letter;
-                        row.appendChild(box);
-                    });
-
-                    container.appendChild(row);
-                });
-
-                // Show remaining empty rows
-                const remainingGuesses = data.maxGuesses - data.guessCount;
-                for (let i = 0; i < remainingGuesses; i++) {
-                    const row = document.createElement('div');
-                    row.className = 'guess-row';
-
-                    for (let j = 0; j < 5; j++) {
-                        const box = document.createElement('div');
-                        box.className = 'letter-box empty';
-                        row.appendChild(box);
-                    }
-
-                    container.appendChild(row);
-                }
-
-                // Update game status
-                const statusDiv = document.getElementById('gameStatus');
-                statusDiv.innerHTML = `<span class="guesses-left">Guesses left: ${remainingGuesses}/${data.maxGuesses}</span>`;
-
-            } catch (error) {
-                console.error('Error loading game data:', error);
-                document.getElementById('playerInfo').textContent = 'Error loading game';
-            }
-        }
-
-        // Load immediately
-        loadGameData();
-
-        // Update every 500ms for responsive updates
-        setInterval(loadGameData, 500);
-    </script>
 </body>
 </html>
