@@ -32,13 +32,11 @@ public class CPHInline
             // Get user info
             if (!CPH.TryGetArg("user", out string user))
             {
-                CPH.LogError("YouTube Stop: Missing 'user' argument");
                 return false;
             }
 
             if (!CPH.TryGetArg("userId", out string userId))
             {
-                CPH.LogError("YouTube Stop: Missing 'userId' argument");
                 return false;
             }
 
@@ -85,7 +83,6 @@ public class CPHInline
                     $"**Moderator:** {user}\n**Action:** Stopped current video (no queue)");
             }
 
-            CPH.LogInfo($"YouTube: Video stopped by mod {user}");
 
             // Process the next video in queue (or hide if queue is empty)
             ProcessQueue(obsScene, obsSource, maxDuration);
@@ -98,7 +95,6 @@ public class CPHInline
                 $"**Error:** {ex.Message}\n**Stack Trace:** {ex.StackTrace}");
 
             CPH.SendMessage("⚠️ An error occurred while stopping the video");
-            CPH.LogError($"YouTube Stop error: {ex.Message}");
             return false;
         }
     }
@@ -163,13 +159,15 @@ public class CPHInline
             maxDuration = videoDuration;
         }
 
-        CPH.LogInfo($"[STOP QUEUE] Music video flag from queue: {isMusicVideo}, Channel: '{channelName}'");
 
         // Fetch synced lyrics if this is a music video (based on queue flag)
         string syncedLyrics = "";
         if (isMusicVideo && !string.IsNullOrEmpty(videoTitle))
         {
-            syncedLyrics = GetSyncedLyrics(videoTitle, channelName);
+            syncedLyrics = GetSyncedLyrics(videoTitle, channelName, maxDuration);
+            if (syncedLyrics.Length > 0)
+            {
+            }
         }
 
         // Play the next video
@@ -205,11 +203,9 @@ public class CPHInline
         try
         {
             System.IO.File.WriteAllText(jsonPath, jsonContent);
-            CPH.LogInfo($"Wrote video ID to JSON: {jsonPath}");
         }
         catch (Exception ex)
         {
-            CPH.LogError($"Failed to write video JSON: {ex.Message}");
         }
 
         // Small delay to ensure file is written
@@ -222,7 +218,6 @@ public class CPHInline
         Task.Run(async () =>
         {
             string monitorId = Guid.NewGuid().ToString().Substring(0, 8);
-            CPH.LogInfo($"[STOP-MONITOR-{monitorId}] Started monitoring video {videoId} for {maxDuration}s");
 
             DateTime startTime = DateTime.Now;
             TimeSpan elapsed = TimeSpan.Zero;
@@ -243,13 +238,11 @@ public class CPHInline
                         string searchPattern = $"\"videoId\":\"{videoId}\"";
                         if (!currentJson.Contains(searchPattern))
                         {
-                            CPH.LogInfo($"[STOP-MONITOR-{monitorId}] New video detected in JSON, stopping monitoring for {videoId}");
                             return; // Don't process queue, new video is already playing
                         }
                     }
                     catch (Exception ex)
                     {
-                        CPH.LogError($"[STOP-MONITOR-{monitorId}] Error reading JSON: {ex.Message}");
                     }
                 }
 
@@ -257,19 +250,16 @@ public class CPHInline
                 bool isVisible = CPH.ObsIsSourceVisible(obsScene, obsSource, 0);
                 if (!isVisible && elapsed.TotalSeconds > 3)
                 {
-                    CPH.LogInfo($"[STOP-MONITOR-{monitorId}] Source hidden externally after {elapsed.TotalSeconds:F1}s, stopping monitoring");
                     return; // Don't process queue if manually stopped
                 }
 
                 // Check if duration reached (add 2 second buffer for safety)
                 if (elapsed.TotalSeconds >= maxDuration + 2)
                 {
-                    CPH.LogInfo($"[STOP-MONITOR-{monitorId}] Duration reached: {elapsed.TotalSeconds:F1}s >= {maxDuration}s (+2s buffer)");
                     break;
                 }
             }
 
-            CPH.LogInfo($"[STOP-MONITOR-{monitorId}] Video {videoId} ended naturally after {elapsed.TotalSeconds:F1}s");
             LogInfo("YouTube Video Ended",
                 $"**User:** {user}\n**Video ID:** {videoId}\n**Duration:** {elapsed.TotalSeconds:F1}s / {maxDuration}s");
 
@@ -371,7 +361,6 @@ public class CPHInline
         }
         catch (Exception ex)
         {
-            CPH.LogError($"Failed to fetch video duration from YouTube API: {ex.Message}");
         }
 
         return 0;
@@ -421,7 +410,7 @@ public class CPHInline
     // LYRICS FETCHING
     // ═══════════════════════════════════════════════════════════
 
-    private string GetSyncedLyrics(string songTitle, string channelName)
+    private string GetSyncedLyrics(string songTitle, string channelName, int videoDuration)
     {
         try
         {
@@ -432,6 +421,7 @@ public class CPHInline
             {
                 return "";
             }
+
 
             // Try to parse artist and song from title
             string artist = "";
@@ -472,8 +462,9 @@ public class CPHInline
                 return "";
             }
 
-            // Use LRCLIB API (completely free, provides timestamped lyrics)
-            string lyricsUrl = $"https://lrclib.net/api/get?artist_name={System.Uri.EscapeDataString(artist)}&track_name={System.Uri.EscapeDataString(song)}";
+            // Use LRCLIB API with duration for better matching
+            // Duration parameter helps LRCLIB return the most accurate version of the song
+            string lyricsUrl = $"https://lrclib.net/api/get?artist_name={System.Uri.EscapeDataString(artist)}&track_name={System.Uri.EscapeDataString(song)}&duration={videoDuration}";
 
             using (WebClient client = new WebClient())
             {
@@ -525,7 +516,6 @@ public class CPHInline
         }
         catch (Exception ex)
         {
-            CPH.LogError($"Failed to fetch lyrics: {ex.Message}");
         }
 
         return "";
@@ -587,7 +577,6 @@ public class CPHInline
 
             if (string.IsNullOrEmpty(webhookUrl))
             {
-                CPH.LogWarn("Discord webhook not configured. Run ConfigSetup.cs first.");
                 return;
             }
 
@@ -622,7 +611,6 @@ public class CPHInline
         }
         catch (Exception ex)
         {
-            CPH.LogError($"DiscordLogger error: {ex.Message}");
         }
     }
 
